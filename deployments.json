@@ -1,0 +1,9 @@
+{
+  "studionet": {
+    "address": "0x9a4CF8C07321e3ba85e5b60835203C97C1632F57",
+    "deployer": "0x8FD2A55265D1CeC7F869150035bF722aA5c62B94",
+    "txHash": "0xc6fb336b0c2ba9efe7de2e7440d041c35deb3cc6e62716c1ab1cdc801a675621",
+    "at": "2026-09-11T22:44:42.708Z",
+    "explorer": "https://genlayer-explorer.vercel.app"
+  }
+}

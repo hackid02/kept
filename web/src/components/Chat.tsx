@@ -89,7 +89,7 @@ export default function Chat() {
           {busy && (
             <div className="rise flex items-center gap-3 text-xs text-white/50">
               <div className="rounded-2xl bg-[#24252e] px-4 py-3"><span className="dots"><span /><span /><span /></span></div>
-              {busy === "checking" && <span className="pill bg-mint/10 text-mint"><Logo size={12} word={false} /> validators checking the promise against the envelope…</span>}
+              {busy === "checking" && <span className="pill bg-mint/10 text-mint"><Logo size={12} word={false} /> GenLayer validators checking the promise against the envelope…</span>}
             </div>
           )}
           {error && <div className="rounded-xl border border-rose/40 bg-rose/10 p-3 text-sm text-rose">{error}</div>}

@@ -10,6 +10,12 @@
 import { createClient, createAccount } from "genlayer-js";
 import * as chains from "genlayer-js/chains";
 import type { Company, Receipt, Stats } from "./types";
+import { CalldataAddress } from "genlayer-js/types";
+
+/** Contract `Address` params must be calldata addresses, not hex strings. */
+export function addr(hex: string) {
+  return new CalldataAddress(Uint8Array.from(Buffer.from(hex.replace(/^0x/, ""), "hex")));
+}
 
 const ADDRESS = (process.env.KEPT_CONTRACT || "") as `0x${string}`;
 const NET = process.env.GENLAYER_NETWORK || "studionet";
@@ -30,6 +36,14 @@ function client(privateKey?: string) {
 
 export const companyKey = () => process.env.KEPT_COMPANY_KEY as `0x${string}` | undefined;
 export const userKey = () => process.env.KEPT_USER_KEY as `0x${string}` | undefined;
+
+/** Studio faucet (studionet / localnet). The SDK's fundAccount refuses non-localnet chains; the RPC itself is fine. */
+export async function fundAccount(address: string, amount = 100000): Promise<boolean> {
+  const url = process.env.GENLAYER_RPC || chain().rpcUrls.default.http[0];
+  const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "sim_fundAccount", params: [address, amount] }) });
+  const data = await res.json().catch(() => ({}));
+  return Boolean(data.result);
+}
 
 export function addressOf(privateKey: string): string {
   return createAccount(privateKey as `0x${string}`).address;
@@ -66,7 +80,7 @@ export const chainApi = {
     return write(privateKey, "register", [name, envelope], bond);
   },
   async commit(privateKey: string, user: string, promise: string, amount: number, due: string, transcript: string): Promise<{ id: string; hash: string }> {
-    const { hash, receipt } = await write(privateKey, "commit", [user, promise, amount, due, transcript]);
+    const { hash, receipt } = await write(privateKey, "commit", [addr(user), promise, amount, due, transcript]);
     // result of the write is the receipt id; fall back to scanning the company's receipts
     let id: string | undefined = extractReturn(receipt);
     if (!id) {
@@ -80,16 +94,23 @@ export const chainApi = {
     return write(privateKey, "mark_fulfilled", [id, proof]);
   },
   async claim(privateKey: string, id: string, evidence: string) {
-    return write(privateKey, "claim", [id, evidence]);
+    const out = await write(privateKey, "claim", [id, evidence]);
+    return { ...out, votes: votesOf(out.receipt) };
   },
   getReceipt: (id: string) => read<any>("get_receipt", [id]).then(toReceipt),
-  getCompany: (address: string) => read<any>("get_company", [address]).then(toCompany),
+  getCompany: (address: string) => read<any>("get_company", [addr(address)]).then(toCompany),
   leaderboard: () => read<any[]>("leaderboard").then((l) => l.map(toCompany)),
   listReceipts: (limit = 50) => read<any[]>("list_receipts", [limit]).then((l) => l.map(toReceipt)),
-  receiptsForUser: (u: string) => read<any[]>("receipts_for_user", [u]).then((l) => l.map(toReceipt)),
-  receiptsForCompany: (c: string) => read<any[]>("receipts_for_company", [c]).then((l) => l.map(toReceipt)),
+  receiptsForUser: (u: string) => read<any[]>("receipts_for_user", [addr(u)]).then((l) => l.map(toReceipt)),
+  receiptsForCompany: (c: string) => read<any[]>("receipts_for_company", [addr(c)]).then((l) => l.map(toReceipt)),
   stats: () => read<any>("stats").then((s) => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, Number(v)])) as unknown as Stats),
 };
+
+/** Validator votes from a transaction receipt: e.g. ["agree","agree","agree"] (idle validators omitted). */
+export function votesOf(receipt: any): string[] {
+  const v = receipt?.consensus_data?.votes || {};
+  return Object.values(v).filter((x) => x !== "idle") as string[];
+}
 
 function extractReturn(receipt: any): string | undefined {
   // genlayer-js receipts carry the execution result in a few possible places depending on version

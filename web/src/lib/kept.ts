@@ -3,7 +3,7 @@
  *   KEPT_BACKEND=chain|sim   (default: chain if KEPT_CONTRACT is set, else sim)
  * Every call reports which backend served it so the UI can show it honestly.
  */
-import { chainApi, chainConfigured, companyKey, userKey, addressOf, chainName } from "./chain";
+import { chainApi, chainConfigured, companyKey, userKey, addressOf, chainName, fundAccount } from "./chain";
 import { sim } from "./sim";
 import type { Backend, Company, Receipt, Stats } from "./types";
 
@@ -16,7 +16,17 @@ export function backend(): Backend {
   return chainConfigured ? "chain" : "sim";
 }
 export function backendInfo() {
-  return { backend: backend(), network: backend() === "chain" ? chainName() : "sim", contract: process.env.KEPT_CONTRACT || null };
+  return { backend: backend(), network: backend() === "chain" ? chainName() : "sim", contract: process.env.KEPT_CONTRACT || null, immediateClaims: immediateClaims() };
+}
+
+/**
+ * Demo knob: on a real chain the contract enforces `today >= due` before a claim can be filed.
+ * Nobody can wait five business days inside a demo, so by default the middleware sets the
+ * on-chain `due` to today, opening the claim window at once. Set KEPT_REAL_DUE_DATES=1 to use
+ * the deadline the agent actually stated.
+ */
+export function immediateClaims(): boolean {
+  return process.env.KEPT_REAL_DUE_DATES !== "1";
 }
 
 export function companyAddress(): string {
@@ -71,17 +81,24 @@ export const kept = {
     }
     return sim.markFulfilled(companyAddress(), id, proof);
   },
-  async claim(id: string, evidence: string, today?: string): Promise<Receipt> {
+  /** `signer` = the claimant's private key (chain) / address (sim). Defaults to the shared demo user. */
+  async claim(id: string, evidence: string, today?: string, signer?: string): Promise<Receipt> {
     if (backend() === "chain") {
-      const key = userKey(); if (!key) throw new Error("connect a wallet to claim (or set KEPT_USER_KEY)");
-      const { hash } = await chainApi.claim(key, id, evidence);
-      const r = await chainApi.getReceipt(id); return { ...r, tx: hash };
+      const key = signer || userKey(); if (!key) throw new Error("no claimant key (set KEPT_USER_KEY)");
+      const { hash, votes } = await chainApi.claim(key, id, evidence);
+      const r = await chainApi.getReceipt(id); return { ...r, tx: hash, votes } as Receipt;
     }
-    return sim.claim(defaultUserAddress(), id, evidence, today);
+    return sim.claim(signer ? addressOf(signer) : defaultUserAddress(), id, evidence, today);
   },
   async registerDemoCompany(name: string, envelope: string, bond: number): Promise<Company> {
     if (backend() === "chain") {
       const key = companyKey(); if (!key) throw new Error("KEPT_COMPANY_KEY not set");
+      const already = await chainApi.getCompany(addressOf(key)).catch(() => null);
+      if (already && already.name && already.bond >= bond) return already;   // idempotent on chain
+      if (["studionet", "localnet"].includes(chainName())) {
+        await fundAccount(addressOf(key), bond * 4).catch(() => false);
+        if (userKey()) await fundAccount(addressOf(userKey()!), 1000).catch(() => false);
+      }
       await chainApi.register(key, name, envelope, BigInt(bond));
       return chainApi.getCompany(addressOf(key));
     }
