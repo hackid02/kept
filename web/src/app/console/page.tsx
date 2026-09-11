@@ -1,9 +1,9 @@
 "use client";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import LiveFeed from "@/components/LiveFeed";
-import { ratePct, rateColor, short } from "@/components/StatusPill";
-import type { Company } from "@/lib/types";
+import { ReceiptRow } from "@/components/Receipt";
+import { ratePct, rateTone, short, money } from "@/components/Status";
+import type { Company, Receipt } from "@/lib/types";
 
 const SNIPPET = `import { wrap } from "kept/middleware";
 
@@ -11,71 +11,77 @@ const SNIPPET = `import { wrap } from "kept/middleware";
 const reply = await myAgent(messages);
 
 // after — same agent, same prompt, same model
-const { reply, receipt, blocked } = await wrap(myAgent)(messages, { user });
-// receipt  -> attach it to the message (promise is now on GenLayer)
-// blocked  -> the over-promise never reached the customer`;
+const { reply, receipt, blocked } =
+  await wrap(myAgent)(messages, { user });`;
 
 function Console() {
-  const params = useSearchParams();
-  const want = params.get("c");
+  const want = useSearchParams().get("c");
   const [cs, setCs] = useState<Company[] | null>(null);
   const [sel, setSel] = useState<Company | null>(null);
+  const [rs, setRs] = useState<Receipt[]>([]);
   useEffect(() => {
     const load = () => fetch("/api/leaderboard").then((r) => r.json()).then((d) => {
       const list: Company[] = d.companies || []; setCs(list);
-      setSel((prev) => list.find((c) => c.address === (want || prev?.address)) || list.find((c) => c.name === "SkyJet Airlines") || list[0] || null);
+      setSel((prev) => list.find((c) => c.address === (prev?.address || want)) || list.find((c) => c.name === "SkyJet Airlines") || list[0] || null);
     });
-    load(); const t = setInterval(load, 5000); return () => clearInterval(t);
+    load(); const t = setInterval(load, 20000); return () => clearInterval(t);
   }, [want]);
+  const [full, setFull] = useState<Company | null>(null);
+  useEffect(() => {
+    if (!sel) return;
+    fetch(`/api/receipts?company=${sel.address}&limit=50`).then((r) => r.json()).then((d) => setRs(d.receipts || []));
+    if (!sel.envelope) fetch(`/api/company?c=${sel.address}`).then((r) => r.json()).then((d) => d.company && setFull(d.company)).catch(() => {});
+  }, [sel]);
+  const envelope = sel?.envelope || (full?.address === sel?.address ? full?.envelope : "") || "";
 
-  if (!cs) return <div className="text-white/40">Loading…</div>;
-  if (!sel) return <div className="card p-8 text-center text-white/60">No companies registered yet. Seed the demo from the home page.</div>;
-  const kept = sel.fulfilled + sel.dismissed;
+  if (!cs) return <p className="text-[13px] text-ink-3">Loading…</p>;
+  if (!sel) return <div className="surface p-10 text-center text-[13px] text-ink-3">No companies registered yet.</div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="k">Company console</div>
-          <h1 className="text-2xl font-extrabold">{sel.name} <span className="mono text-sm font-normal text-white/40">{short(sel.address)}</span></h1>
+          <p className="label">Company console</p>
+          <h1 className="serif mt-1 text-[34px] leading-none text-ink">{sel.name}</h1>
+          <p className="mono mt-2 text-[12px] text-ink-3">{sel.address}</p>
         </div>
-        <select className="input w-auto" value={sel.address} onChange={(e) => setSel(cs.find((c) => c.address === e.target.value) || sel)}>
+        <select className="input !h-9 !w-auto appearance-none !py-0 !pr-9 !text-[13px] bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22 fill=%22none%22 stroke=%22%236B6B68%22 stroke-width=%221.5%22><path d=%22M3 4.5l3 3 3-3%22/></svg>')] bg-[length:12px] bg-[position:right_12px_center] bg-no-repeat" value={sel.address} onChange={(e) => setSel(cs.find((c) => c.address === e.target.value) || sel)} aria-label="Company">
           {cs.map((c) => <option key={c.address} value={c.address}>{c.name}</option>)}
         </select>
+      </header>
+
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(300px,1fr)]">
+        <section className="surface p-5">
+          <p className="label">Authority envelope</p>
+          <blockquote className="serif mt-3 whitespace-pre-line text-[22px] leading-[1.35] text-ink">{envelope || <span className="shimmer text-ink-3">Reading envelope from the contract…</span>}</blockquote>
+          <p className="mt-4 border-t border-hairline pt-3 text-[12.5px] leading-relaxed text-ink-3">Plain English, public. Every commitment the agent drafts is checked against this text by validators before it reaches a customer. Re-register to change it; new text applies to new receipts.</p>
+        </section>
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-hairline bg-hairline">
+          <Cell k="Kept-rate" v={ratePct(sel.kept_rate)} tone={rateTone(sel.kept_rate)} big />
+          <Cell k="Bond at risk" v={money(sel.bond)} big />
+          <Cell k="Promised" v={String(sel.committed)} />
+          <Cell k="Blocked" v={String(sel.blocked)} />
+          <Cell k="Kept" v={String(sel.fulfilled)} />
+          <Cell k="Broken" v={String(sel.upheld)} />
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="card p-5 md:col-span-2">
-          <div className="k mb-2">Authority envelope <span className="normal-case text-white/30">— plain English, public, what the agent may promise</span></div>
-          <blockquote className="rounded-xl border border-mint/30 bg-mint/5 p-4 text-[15px] leading-relaxed">{sel.envelope}</blockquote>
-          <p className="mt-3 text-xs text-white/50">Every commitment the agent drafts is checked against this text by GenLayer validators before it reaches the customer. Change the envelope by re-registering; the new text applies to new receipts only.</p>
-        </div>
-        <div className="space-y-4">
-          <div className="card p-5"><div className="k">Kept-rate</div><div className={`mono mt-1 text-4xl font-extrabold ${rateColor(sel.kept_rate)}`}>{ratePct(sel.kept_rate)}</div><div className="mt-1 text-xs text-white/50">{kept} kept · {sel.upheld} broken</div></div>
-          <div className="card p-5"><div className="k">Bond at risk</div><div className="mono mt-1 text-3xl font-bold">${sel.bond}</div><div className="mt-1 text-xs text-white/50">pays upheld claims automatically</div></div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        {[["Committed", sel.committed], ["Blocked", sel.blocked], ["Fulfilled", sel.fulfilled], ["Upheld", sel.upheld], ["Dismissed", sel.dismissed]].map(([k, v]) => (
-          <div key={k as string} className="card p-4"><div className="k">{k}</div><div className="mono mt-1 text-2xl font-bold">{v}</div></div>
-        ))}
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="card p-5">
-          <div className="mb-3 font-bold">Receipts issued by {sel.name}</div>
-          <LiveFeed limit={50} company={sel.address} />
-        </div>
-        <div className="card p-5">
-          <div className="mb-1 font-bold">Wire it into your agent</div>
-          <p className="mb-3 text-xs text-white/50">One line around whatever produces your agent&apos;s reply. Works with any LLM stack; the SkyJet demo is exactly this (see <span className="mono">web/src/lib/middleware.ts</span> and <span className="mono">api/chat/route.ts</span>).</p>
-          <pre className="mono overflow-x-auto rounded-xl bg-[#0d0e12] p-4 text-xs leading-relaxed text-white/80">{SNIPPET}</pre>
-          <div className="mt-3 text-xs text-white/50">Contract: <span className="mono">contracts/kept.py</span> · methods <span className="mono">register · commit · mark_fulfilled · claim · kept_rate</span></div>
-        </div>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(300px,1fr)]">
+        <section className="surface p-5">
+          <h2 className="mb-2 text-[15px] font-medium text-ink">Receipts issued</h2>
+          {rs.length ? <div className="hairline-y">{rs.map((r) => <ReceiptRow key={r.id} r={r} />)}</div> : <p className="py-8 text-center text-[13px] text-ink-3">None yet.</p>}
+        </section>
+        <section className="surface p-5">
+          <h2 className="text-[15px] font-medium text-ink">Wire it in</h2>
+          <p className="mt-1 text-[12.5px] leading-relaxed text-ink-3">One line around whatever produces your agent's reply. Any model, any framework. The demo is this exact path.</p>
+          <pre className="mono mt-4 overflow-x-auto rounded-lg border border-hairline bg-canvas p-4 text-[12px] leading-[1.7] text-ink-2">{SNIPPET}</pre>
+          <p className="mono mt-3 text-[11px] text-ink-3">contracts/kept.py · register · commit · mark_fulfilled · claim · kept_rate</p>
+        </section>
       </div>
     </div>
   );
 }
-
-export default function Page() { return <Suspense fallback={<div className="text-white/40">Loading…</div>}><Console /></Suspense>; }
+function Cell({ k, v, tone = "text-ink", big = false }: { k: string; v: string; tone?: string; big?: boolean }) {
+  return <div className="bg-surface p-4"><p className="label">{k}</p><p className={`mono mt-1.5 ${big ? "text-[26px]" : "text-[18px]"} ${tone}`}>{v}</p></div>;
+}
+export default function Page() { return <Suspense fallback={<p className="text-[13px] text-ink-3">Loading…</p>}><Console /></Suspense>; }

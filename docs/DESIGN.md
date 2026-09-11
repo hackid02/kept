@@ -1,0 +1,82 @@
+# Kept — design system
+
+> A notary's desk at night. Quiet, exact, expensive. The receipt is the hero object; everything else recedes.
+
+## Feel
+
+Premium · minimal · futuristic · simple. Premium comes from restraint (one accent, hairlines, weight ≤ 500), not from glow. Futuristic comes from precision (mono metadata, exact motion), not from gradients. The product speaks like a receipt: short declaratives, nouns for labels, no exclamation marks.
+
+## Tokens
+
+### Color (true neutrals — no blue-tinted greys)
+
+| Token | Value | Use |
+|---|---|---|
+| `--canvas` | `#0A0A0B` | page |
+| `--surface` | `#111113` | cards, chat window |
+| `--surface-2` | `#17171A` | nested surfaces, inputs, bubbles |
+| `--surface-3` | `#1F1F23` | hover fills, secondary buttons |
+| `--hairline` | `rgba(255,255,255,.08)` | every border |
+| `--hairline-strong` | `rgba(255,255,255,.14)` | focused/selected edges |
+| `--ink` | `#F2F2F0` | primary text (never pure white) |
+| `--ink-2` | `#A3A3A0` | secondary text |
+| `--ink-3` | `#6B6B68` | tertiary text, labels |
+| `--accent` | `#7FD8BE` | **one job**: the verdict/primary action and the receipt mark |
+| `--accent-ink` | `#06231B` | text on accent |
+| `--amber` | `#D9A441` | ACTIVE / pending only |
+| `--rose` | `#D96C6C` | BLOCKED / UPHELD-against-company only |
+| `--user` | `#2F6BFF` | the customer's bubble — the only blue on the page |
+
+Status colours appear only on badges and the 1px receipt edge. Never on text blocks, never as backgrounds larger than a pill.
+
+### Type
+
+| Role | Face | Size / weight / tracking |
+|---|---|---|
+| Display | Newsreader (serif, opsz) | 44–56px · 400 · −0.02em · lh 1.05 |
+| Promise text (on receipts) | Newsreader italic | 22–28px · 400 · −0.01em · lh 1.25 |
+| Heading | Inter | 20–24px · 500 · −0.015em |
+| Body | Inter | 15px · 400 · lh 1.55 |
+| UI / labels | Inter | 13px · 500 · 0 ; labels 11px · 500 · +0.08em uppercase |
+| Data (ids, hashes, amounts, dates) | JetBrains Mono | 12–13px · 400 · tabular-nums |
+
+Weight ceiling is 500. `text-wrap: balance` on headings, `pretty` on body. `font-feature-settings: "cv11","ss01","tnum"` on Inter.
+
+### Space & shape
+
+4px base. Ladder: 4 · 8 · 12 · 16 · 24 · 32 · 48 · 72 · 96.
+Section gap 72. Card padding 24. Element gap 8/12.
+Radii: **4** (badges) · **8** (buttons, inputs) · **14** (cards) · **9999** (pills). Concentric: outer = inner + padding.
+Borders do structure; shadows do nothing (except a soft 0 1px 0 white/4% inner highlight on raised surfaces).
+Max width 1120.
+
+### Motion
+
+```
+--ease-out:    cubic-bezier(0.23, 1, 0.32, 1)
+--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1)
+press 120ms · hover 160ms · enter 240ms · state-swap 200ms
+```
+
+Rules: never `ease-in`; never `transition: all`; never from `scale(0)`; buttons `scale(.97)` on `:active`; exits softer than enters; no animation on chat send / typing / nav (high-frequency). Motion is never the only cue — every animated change has a static one (label, colour, icon).
+
+The three moments that earn motion:
+1. **Receipt issued** — card rises 8px, blur 6→0, 240ms; the mark draws its check.
+2. **Draft struck** — a rose rule wipes through the blocked draft left→right (clip-path, 320ms), then the BLOCKED row settles in below.
+3. **Verdict resolves** — status text swaps with blur; the payout amount pops in with tabular digits.
+
+Waiting states ("validators ruling…") use a shimmering status line that swaps steps, never a spinner alone.
+
+## Copy
+
+- Declarative, present tense, ≤ 12 words per line where possible.
+- Labels are nouns: *Promise · Value · Due · Envelope · Anchored · Bond at risk*.
+- Verdicts are single words: *Kept · Blocked · Upheld · Dismissed*.
+- Never: seamless, empower, unlock, revolutionary, leverage, "!" .
+- The product never says "AI-powered". It says who decided: *"Ruled by 3 validators."*
+
+## Flow
+
+One page holds the loop. Left: the chat. Right: the receipt rail — the latest receipt for *this visitor* is pinned; the claim lives on it. Below: the board, live. Secondary routes (`/r/[id]`, `/board`, `/console`, `/how`) exist for sharing and depth, not for understanding.
+
+States to design, every component: default · hover · focus-visible · active · loading · empty · error · disabled.

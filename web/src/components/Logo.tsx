@@ -1,11 +1,16 @@
-export default function Logo({ size = 28, word = true }: { size?: number; word?: boolean }) {
+export function Mark({ size = 20, draw = false }: { size?: number; draw?: boolean }) {
   return (
-    <span className="inline-flex items-center gap-2">
-      <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden>
-        <rect width="40" height="40" rx="11" fill="#34d399" />
-        <path d="M11 20.5l6 6 12-13" stroke="#062015" strokeWidth="4.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      </svg>
-      {word && <span className="text-lg font-extrabold tracking-tight">Kept</span>}
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect x="1" y="1" width="22" height="22" rx="6" stroke="var(--accent)" strokeWidth="1.5" />
+      <path d="M7 12.5l3.2 3.2L17 9" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={draw ? "check-draw" : undefined} />
+    </svg>
+  );
+}
+export default function Logo({ word = true }: { word?: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-2.5">
+      <Mark size={20} />
+      {word && <span className="serif text-[21px] leading-none tracking-tight text-ink">Kept</span>}
     </span>
   );
 }

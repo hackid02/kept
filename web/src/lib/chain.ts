@@ -49,9 +49,26 @@ export function addressOf(privateKey: string): string {
   return createAccount(privateKey as `0x${string}`).address;
 }
 
+/**
+ * Read cache + request coalescing. Studio's RPC allows ~30 req/min; the UI polls several
+ * views from every open tab. Identical reads within TTL share one RPC call; writes bust
+ * the cache so the UI sees its own changes immediately.
+ */
+const TTL_MS = Number(process.env.KEPT_READ_TTL_MS || 8000);
+const cache = new Map<string, { at: number; value: Promise<any> }>();
+export function bustReadCache() { cache.clear(); }
+
 async function read<T>(functionName: string, args: any[] = []): Promise<T> {
-  const c = client();
-  return (await c.readContract({ address: ADDRESS, functionName, args })) as T;
+  const key = functionName + ":" + JSON.stringify(args, (_, v) => (v?.bytes ? Buffer.from(v.bytes).toString("hex") : v));
+  const hit = cache.get(key);
+  if (hit && Date.now() - hit.at < TTL_MS) return hit.value as Promise<T>;
+  const value = (async () => {
+    const c = client();
+    return (await c.readContract({ address: ADDRESS, functionName, args })) as T;
+  })();
+  cache.set(key, { at: Date.now(), value });
+  value.catch(() => cache.delete(key));
+  return value;
 }
 
 async function write(privateKey: string, functionName: string, args: any[], value?: bigint): Promise<{ hash: string; receipt: any }> {
@@ -59,7 +76,8 @@ async function write(privateKey: string, functionName: string, args: any[], valu
   const params: any = { address: ADDRESS, functionName, args };
   if (value !== undefined) params.value = value;
   const hash = await c.writeContract(params);
-  const receipt = await c.waitForTransactionReceipt({ hash, status: "ACCEPTED" as any, retries: 120, interval: 3000 } as any);
+  const receipt = await c.waitForTransactionReceipt({ hash, status: "ACCEPTED" as any, retries: 60, interval: 4000 } as any);
+  bustReadCache();
   return { hash: String(hash), receipt };
 }
 

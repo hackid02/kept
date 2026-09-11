@@ -1,47 +1,52 @@
 import Link from "next/link";
 
 const steps = [
-  { n: "01", t: "Company sets an envelope and posts a bond", d: "Plain English: “Refunds up to $500 per customer. Fee waivers up to $50. Reschedules up to 30 days at no charge. Nothing else.” The bond is real money locked in the Kept contract on GenLayer." },
-  { n: "02", t: "Every commitment is checked before it reaches the human", d: "kept.wrap() intercepts the agent's reply. If it contains a promise, the contract asks GenLayer validators — independent models, none chosen by the company — whether the promise sits inside the envelope. Inside: a receipt is minted and attached to the message. Outside: the reply is replaced. The jailbreak never lands." },
-  { n: "03", t: "The human holds a receipt", d: "Promise, amount, due date, transcript hash, company, status. Public URL. Can't be edited by the company, can't be lost by the customer." },
-  { n: "04", t: "Kept, or claimed", d: "The company marks it fulfilled with proof. If it doesn't, once the due date passes the human files a claim. Validators read the transcript, the proof, the evidence — and rule UPHELD or DISMISSED." },
-  { n: "05", t: "Paid from the bond, no lawyer, no tribunal", d: "UPHELD moves the promised amount from the bond to the human, automatically, and lowers the company's public Kept-rate. Moffatt v. Air Canada took 15 months and a tribunal for C$812. This takes one block." },
+  ["The envelope", "A company writes what its agent may promise, in plain English, and posts a bond in the Kept contract on GenLayer.", "Refunds up to $500 per customer. Fee waivers up to $50. Reschedules up to 30 days at no charge. Nothing else."],
+  ["The check", "kept.wrap() sits around the agent. When a reply commits to something, the contract asks GenLayer validators — independent models, none chosen by the company — whether it sits inside the envelope. Inside: a receipt is minted and attached. Outside: the reply is replaced. The jailbreak never lands.", null],
+  ["The receipt", "Promise, amount, due date, transcript, company, status. A public URL the company can't edit and the customer can't lose.", null],
+  ["The claim", "The company marks it kept, with proof. If it doesn't, once the date passes the customer files a claim. Validators read the transcript, the proof and the evidence, and rule.", null],
+  ["The payout", "Upheld moves the amount from the bond to the customer in the same transaction, and lowers the company's public Kept-rate. Moffatt v. Air Canada took fifteen months and a tribunal for C$812. This takes one block.", null],
 ];
 
 export default function How() {
   return (
-    <div className="mx-auto max-w-3xl space-y-10">
-      <div>
-        <h1 className="text-3xl font-extrabold">How Kept works</h1>
-        <p className="mt-2 text-white/60">AI agents now speak for companies. Courts have already ruled that what they say binds the company. Kept makes that enforceable at chat speed — and makes the guardrail run <i>before</i> the promise, not after the lawsuit.</p>
-      </div>
-      <ol className="space-y-5">
-        {steps.map((s) => (
-          <li key={s.n} className="card flex gap-5 p-5">
-            <div className="mono text-2xl font-extrabold text-mint">{s.n}</div>
-            <div><div className="font-bold">{s.t}</div><p className="mt-1 text-sm leading-relaxed text-white/60">{s.d}</p></div>
+    <div className="mx-auto max-w-3xl space-y-14">
+      <header>
+        <h1 className="serif text-[40px] leading-[1.05] tracking-[-0.02em] text-ink">How Kept works</h1>
+        <p className="mt-4 max-w-2xl text-[15px] leading-[1.6] text-ink-2">AI agents now speak for companies, and courts have ruled that what they say binds the company. Kept makes that enforceable at chat speed — and puts the guardrail before the promise, not after the lawsuit.</p>
+      </header>
+
+      <ol className="space-y-0 border-t border-hairline">
+        {steps.map(([h, p, q], i) => (
+          <li key={h} className="grid gap-4 border-b border-hairline py-7 md:grid-cols-[72px_1fr]">
+            <span className="mono text-[13px] text-ink-3">0{i + 1}</span>
+            <div>
+              <h2 className="serif text-[24px] text-ink">{h}</h2>
+              <p className="mt-2 text-[14px] leading-[1.65] text-ink-2">{p}</p>
+              {q && <blockquote className="serif mt-4 border-l-2 border-accent pl-4 text-[18px] italic leading-[1.4] text-ink">{q}</blockquote>}
+            </div>
           </li>
         ))}
       </ol>
 
-      <section className="card p-6">
-        <h2 className="font-bold">Why this needs GenLayer</h2>
-        <ul className="mt-3 space-y-2 text-sm text-white/70">
-          <li>• <b className="text-white">“Was it inside the envelope?” and “was it honored?” are judgments</b>, not lookups. A plain smart contract can't make them; a single LLM run by the company is a judge in its own case.</li>
-          <li>• GenLayer's Optimistic Democracy runs the same prompt across <b className="text-white">multiple validators on different models</b> and only stores what the majority agrees on. In <span className="mono">contracts/kept.py</span> the validator re-derives the answer and compares only the decision field (<span className="mono">inside</span> / <span className="mono">verdict</span>), never the free-text reasoning.</li>
-          <li>• The verdict and the money live in the same place: <b className="text-white">UPHELD triggers the transfer</b> from the bond in the same transaction. No oracle, no multisig, no “we'll get back to you”.</li>
-        </ul>
+      <section className="grid gap-6 md:grid-cols-2">
+        <div className="surface p-6">
+          <h2 className="text-[15px] font-medium text-ink">Why this needs GenLayer</h2>
+          <ul className="mt-3 space-y-3 text-[13.5px] leading-[1.6] text-ink-2">
+            <li>"Inside the envelope?" and "was it honored?" are judgments, not lookups. A plain smart contract can't make them; a single model run by the company is a judge in its own case.</li>
+            <li>Optimistic Democracy runs the same prompt across validators on different models and stores only what the majority agrees on. The validator compares the decision field alone — never the prose.</li>
+            <li>The verdict and the money live in the same place. Upheld triggers the transfer from the bond in the same transaction.</li>
+          </ul>
+        </div>
+        <div className="surface p-6">
+          <h2 className="text-[15px] font-medium text-ink">Not Internet Court</h2>
+          <p className="mt-3 text-[13.5px] leading-[1.6] text-ink-2">Internet Court resolves disputes between agents. Kept covers the person on the other end of the chat: the promise is checked and receipted before it's made, the bond is posted before anything goes wrong, and the customer never files anything unless the company fails.</p>
+          <div className="mt-6 flex gap-2">
+            <Link href="/" className="btn btn-primary">Try the demo</Link>
+            <Link href="/board" className="btn btn-secondary">See the board</Link>
+          </div>
+        </div>
       </section>
-
-      <section className="card p-6 text-sm text-white/70">
-        <h2 className="font-bold text-white">Not Internet Court</h2>
-        <p className="mt-2">Internet Court resolves disputes between agents. Kept covers the human on the other end of the chat: the promise is checked and receipted <i>before</i> it's made, the bond is posted <i>before</i> anything goes wrong, and the customer never has to file anything unless the company fails.</p>
-      </section>
-
-      <div className="flex gap-3">
-        <Link href="/" className="btn-primary">Try the demo</Link>
-        <Link href="/leaderboard" className="btn-ghost">See the Kept-rate board</Link>
-      </div>
     </div>
   );
 }
