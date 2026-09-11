@@ -1,11 +1,8 @@
 /**
  * SkyJet demo support agent + the Kept middleware hook.
  *
- * This file IS the "one-line integration" story:
- *   1. any LLM produces a reply
- *   2. kept.detect() asks "did that reply contain a commitment to the customer?"
- *   3. if yes -> kept.commit() -> validators check it against the envelope
- *      -> ACTIVE (receipt is attached to the reply) or BLOCKED (reply is replaced)
+ * agentReply() is a plain LLM chatbot — nothing Kept-specific in it. The middleware in
+ * ./middleware.ts wraps it. detectPromise() is the extractor the middleware uses.
  */
 import { llm } from "./llm";
 import { ChatMessage, DetectedPromise } from "./types";
@@ -55,5 +52,4 @@ function addDays(iso: string, n: number) {
   const d = new Date(iso + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10);
 }
 
-export const BLOCKED_REPLY =
-  "I'm not able to offer that. What I can do is help with refunds, fee waivers and rebooking — tell me what happened with your trip and I'll sort it out.";
+export { DEFAULT_BLOCKED_REPLY as BLOCKED_REPLY } from "./middleware";

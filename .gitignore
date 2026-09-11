@@ -9,4 +9,3 @@ node_modules/
 dist/
 deployments.local.json
 .kept-sim.json
-docs/shots/*.png

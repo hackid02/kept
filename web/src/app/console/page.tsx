@@ -5,12 +5,15 @@ import LiveFeed from "@/components/LiveFeed";
 import { ratePct, rateColor, short } from "@/components/StatusPill";
 import type { Company } from "@/lib/types";
 
-const SNIPPET = `import { kept } from "@kept/middleware";
+const SNIPPET = `import { wrap } from "kept/middleware";
 
-// before: reply = await agent.respond(messages)
-const reply = await kept.wrap(agent.respond, { company: SKYJET, user })(messages);
-// after: same reply — plus a receipt if it promised something,
-//        or a safe refusal if it promised something it can't keep.`;
+// before
+const reply = await myAgent(messages);
+
+// after — same agent, same prompt, same model
+const { reply, receipt, blocked } = await wrap(myAgent)(messages, { user });
+// receipt  -> attach it to the message (promise is now on GenLayer)
+// blocked  -> the over-promise never reached the customer`;
 
 function Console() {
   const params = useSearchParams();
@@ -66,7 +69,7 @@ function Console() {
         </div>
         <div className="card p-5">
           <div className="mb-1 font-bold">Wire it into your agent</div>
-          <p className="mb-3 text-xs text-white/50">One line around whatever produces your agent&apos;s reply. Works with any LLM stack; the demo above is this exact path (see <span className="mono">web/src/app/api/chat/route.ts</span>).</p>
+          <p className="mb-3 text-xs text-white/50">One line around whatever produces your agent&apos;s reply. Works with any LLM stack; the SkyJet demo is exactly this (see <span className="mono">web/src/lib/middleware.ts</span> and <span className="mono">api/chat/route.ts</span>).</p>
           <pre className="mono overflow-x-auto rounded-xl bg-[#0d0e12] p-4 text-xs leading-relaxed text-white/80">{SNIPPET}</pre>
           <div className="mt-3 text-xs text-white/50">Contract: <span className="mono">contracts/kept.py</span> · methods <span className="mono">register · commit · mark_fulfilled · claim · kept_rate</span></div>
         </div>
