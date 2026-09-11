@@ -327,6 +327,9 @@ Respond with JSON only:
         r.evidence = evidence
         r.verdict_reason = result["reason"]
         r.updated_at = self._now()
+        if r.status == "FULFILLED":
+            # the claim supersedes the company's own word; count the receipt once, by final status
+            company.fulfilled = u256(int(company.fulfilled) - 1)
         payout = u256(0)
         if result["verdict"] == "UPHOLD":
             r.status = "UPHELD"

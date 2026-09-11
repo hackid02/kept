@@ -1,14 +1,13 @@
-# GenLayer test networks. `gltest tests/integration -v --network <name>`
+# GenLayer test networks. Run integration tests with:
+#   gltest tests/integration -v --network localnet     (glsim / local Studio on :4000)
+#   gltest tests/integration -v --network studionet    (hosted Studio)
+# Testnet deployment is done via deploy/deploy.py (needs DEPLOYER_PRIVATE_KEY in .env).
 networks:
   default: localnet
   localnet:
     url: http://127.0.0.1:4000/api
   studionet:
     url: https://studio.genlayer.com/api
-  testnet_bradbury:
-    url: https://rpc.genlayer.com/api
-    accounts:
-      - "${ACCOUNT_PRIVATE_KEY_1}"
 paths:
   contracts: contracts
   artifacts: artifacts

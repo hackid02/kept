@@ -8,3 +8,5 @@ node_modules/
 .next/
 dist/
 deployments.local.json
+.kept-sim.json
+docs/shots/*.png

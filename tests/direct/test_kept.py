@@ -189,7 +189,9 @@ def test_claim_dismissed_when_company_has_proof(world, direct_vm, direct_alice, 
     assert verdict == "DISMISSED"
     co = world.get_company(A(direct_alice))
     assert co["bond"] == 25_000
-    assert co["dismissed"] == 1 and co["fulfilled"] == 1
+    # a receipt is counted once, by its final status: the claim supersedes the company's own mark
+    assert co["dismissed"] == 1 and co["fulfilled"] == 0
+    assert world.kept_rate(A(direct_alice)) == 10_000
     assert co["kept_rate"] == 10_000  # 100%
 
 
