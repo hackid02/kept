@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
-import { kept, backend, defaultUserAddress } from "@/lib/kept";
+import { kept, backend, defaultUserAddress, SKYJET_ENVELOPE } from "@/lib/kept";
 import { sim } from "@/lib/sim";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
-
-const SKYJET_ENVELOPE = `Refunds up to $500 per customer.
-Fee waivers up to $50.
-Reschedules up to 30 days at no charge.
-Nothing else.`;
 
 /**
  * POST /api/seed  — populate the demo with a realistic world:

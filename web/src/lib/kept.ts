@@ -7,16 +7,37 @@ import { chainApi, chainConfigured, companyKey, userKey, addressOf, chainName, f
 import { sim } from "./sim";
 import type { Backend, Company, Receipt, Stats } from "./types";
 
+export const SKYJET_ENVELOPE = `Refunds up to $500 per customer.
+Fee waivers up to $50.
+Reschedules up to 30 days at no charge.
+Nothing else.`;
+
 export const DEMO_COMPANY_ADDRESS = "0x5c1e7a1a11e5b0d3f8b4c2d1e0a9f8e7d6c5b4a3";  // sim-only pseudo address
 export const DEMO_USER_ADDRESS = "0xc057e0a3b5d7f9e1c3a5b7d9f1e3a5c7b9d1f3b0";
 
+/**
+ * Chain health: if the GenLayer RPC stops answering, reads/writes fall back to the simulator
+ * for a cool-off period instead of dead-ending the demo. The badge in the UI reflects it.
+ */
+let chainDownUntil = 0;
+const COOL_OFF_MS = 60_000;
+export function reportChainFailure(e: unknown) {
+  const msg = String((e as any)?.message || e);
+  // contract-level rejections (UserError) are real answers, not outages
+  if (/only the|not yet due|cannot claim|bond insufficient|not registered|unknown receipt|not ACTIVE|envelope too short/i.test(msg)) return;
+  chainDownUntil = Date.now() + COOL_OFF_MS;
+  console.warn("[kept] chain unavailable, falling back to simulator for 60s:", msg.slice(0, 200));
+}
+export function chainDegraded() { return Date.now() < chainDownUntil; }
+
 export function backend(): Backend {
   const forced = process.env.KEPT_BACKEND as Backend | undefined;
-  if (forced) return forced;
-  return chainConfigured ? "chain" : "sim";
+  const want: Backend = forced || (chainConfigured ? "chain" : "sim");
+  if (want === "chain" && chainDegraded()) return "sim";
+  return want;
 }
 export function backendInfo() {
-  return { backend: backend(), network: backend() === "chain" ? chainName() : "sim", contract: process.env.KEPT_CONTRACT || null, immediateClaims: immediateClaims() };
+  return { backend: backend(), network: backend() === "chain" ? chainName() : "sim", contract: process.env.KEPT_CONTRACT || null, immediateClaims: immediateClaims(), degraded: chainDegraded() };
 }
 
 /**
@@ -38,6 +59,17 @@ export function defaultUserAddress(): string {
   return DEMO_USER_ADDRESS;
 }
 
+/** When the simulator is standing in for the chain, make sure the demo company exists there. */
+function ensureSimCompany() {
+  if (!sim.getCompany(companyAddress())) sim.register(companyAddress(), "SkyJet Airlines", SKYJET_ENVELOPE, 25000);
+}
+
+/** Run on chain; on transport failure mark the chain degraded and serve the simulator instead. */
+async function onChain<T>(chain: () => Promise<T>, fallback: () => T | Promise<T>): Promise<T> {
+  if (backend() !== "chain") return fallback();
+  try { return await chain(); } catch (e) { reportChainFailure(e); return fallback(); }
+}
+
 export const kept = {
   // ---- reads
   async getReceipt(id: string): Promise<Receipt | null> {
@@ -49,28 +81,34 @@ export const kept = {
     return sim.getCompany(address);
   },
   async leaderboard(): Promise<Company[]> {
-    return backend() === "chain" ? chainApi.leaderboard() : sim.leaderboard();
+    return onChain(() => chainApi.leaderboard(), () => sim.leaderboard());
   },
   async listReceipts(limit = 50): Promise<Receipt[]> {
-    return backend() === "chain" ? chainApi.listReceipts(limit) : sim.listReceipts(limit);
+    return onChain(() => chainApi.listReceipts(limit), () => sim.listReceipts(limit));
   },
   async receiptsForUser(u: string): Promise<Receipt[]> {
-    return backend() === "chain" ? chainApi.receiptsForUser(u) : sim.receiptsForUser(u);
+    return onChain(() => chainApi.receiptsForUser(u), () => sim.receiptsForUser(u));
   },
   async receiptsForCompany(c: string): Promise<Receipt[]> {
-    return backend() === "chain" ? chainApi.receiptsForCompany(c) : sim.receiptsForCompany(c);
+    return onChain(() => chainApi.receiptsForCompany(c), () => sim.receiptsForCompany(c));
   },
   async stats(): Promise<Stats> {
-    return backend() === "chain" ? chainApi.stats() : sim.stats();
+    return onChain(() => chainApi.stats(), () => sim.stats());
   },
 
   // ---- writes (server-held demo keys; wallet-signed writes go straight from the browser)
   async commit(user: string, promise: string, amount: number, due: string, transcript: string): Promise<Receipt> {
     if (backend() === "chain") {
       const key = companyKey(); if (!key) throw new Error("KEPT_COMPANY_KEY not set");
-      const { id, hash } = await chainApi.commit(key, user, promise, amount, due, transcript);
-      const r = await chainApi.getReceipt(id); return { ...r, tx: hash };
+      try {
+        const { id, hash } = await chainApi.commit(key, user, promise, amount, due, transcript);
+        const r = await chainApi.getReceipt(id); return { ...r, tx: hash };
+      } catch (e) {
+        reportChainFailure(e);
+        if (!chainDegraded()) throw e;            // a genuine contract rejection: surface it
+      }
     }
+    ensureSimCompany();
     return sim.commit(companyAddress(), user, promise, amount, due, transcript);
   },
   async markFulfilled(id: string, proof: string): Promise<Receipt> {

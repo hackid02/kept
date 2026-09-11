@@ -10,6 +10,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import { Company, Receipt, Stats } from "./types";
 import { judgeEnvelope, judgeClaim } from "./judge";
 
@@ -20,17 +21,25 @@ interface SimState {
   counter: number;
 }
 
-const FILE = path.join(process.cwd(), ".kept-sim.json");
+// State lives in a JSON file locally; on read-only/serverless filesystems (Vercel) it falls back
+// to the OS temp dir, and to process memory if even that fails. The simulator is a dev/fallback
+// backend — the chain is the source of truth in production.
+const CANDIDATES = [path.join(process.cwd(), ".kept-sim.json"), path.join(os.tmpdir(), "kept-sim.json")];
+let FILE = CANDIDATES[0];
+let memory: SimState | null = null;
 
 function load(): SimState {
-  try {
-    return JSON.parse(fs.readFileSync(FILE, "utf8"));
-  } catch {
-    return { companies: {}, receipts: {}, order: [], counter: 0 };
+  if (memory) return memory;
+  for (const f of CANDIDATES) {
+    try { const s = JSON.parse(fs.readFileSync(f, "utf8")); FILE = f; return s; } catch { /* next */ }
   }
+  return { companies: {}, receipts: {}, order: [], counter: 0 };
 }
 function save(s: SimState) {
-  fs.writeFileSync(FILE, JSON.stringify(s, null, 1));
+  memory = s;
+  for (const f of [FILE, ...CANDIDATES]) {
+    try { fs.writeFileSync(f, JSON.stringify(s, null, 1)); FILE = f; return; } catch { /* next */ }
+  }
 }
 const now = () => new Date().toISOString();
 const day = (s: string) => (s || "").slice(0, 10);

@@ -9,7 +9,7 @@ export default function BackendBadge() {
   return (
     <span className={`pill ${chain ? "bg-mint/15 text-mint" : "bg-amber/15 text-amber"}`} title={chain ? `contract ${b.contract}` : "in-process twin of the contract; same rules, same prompts, LLM panel"}>
       <span className={`h-1.5 w-1.5 rounded-full ${chain ? "bg-mint" : "bg-amber"}`} />
-      {chain ? `GenLayer · ${b.network}` : "Simulator"}{b.llm === "offline" ? " · offline LLM" : ""}
+      {chain ? `GenLayer · ${b.network}` : b.degraded ? "Simulator · chain unreachable" : "Simulator"}{b.llm === "offline" ? " · offline LLM" : ""}
     </span>
   );
 }
