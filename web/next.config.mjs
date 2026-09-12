@@ -13,6 +13,14 @@ const headers = [
 const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  // og.ts reads assets/fonts/*.woff at render time via a computed path, which the file tracer can't see.
+  // Declare them so the serverless bundles for the OG routes include the fonts (they 500 on Vercel otherwise).
+  experimental: {
+    outputFileTracingIncludes: {
+      "/opengraph-image": ["./assets/fonts/*.woff"],
+      "/r/[id]/opengraph-image": ["./assets/fonts/*.woff"],
+    },
+  },
   async headers() { return [{ source: "/(.*)", headers }]; },
 };
 export default nextConfig;

@@ -1,0 +1,9 @@
+# only web/ is deployed; keep the upload small
+.venv
+__pycache__
+node_modules
+web/node_modules
+web/.next
+docs/shots
+*.png
+*.mp4
