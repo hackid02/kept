@@ -14,7 +14,7 @@ export default function Board() {
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       <header className="max-w-2xl">
-        <h1 className="serif text-[34px] leading-none text-ink">Kept-rate</h1>
+        <h1 className="serif text-[30px] leading-none text-ink sm:text-[34px]">Kept-rate</h1>
         <p className="mt-3 text-[14px] leading-[1.6] text-ink-2">The share of promises each company's agents actually kept, as ruled by GenLayer validators — not by the company. Public, unforgeable, and the only number here a marketing team cannot touch.</p>
       </header>
       {st && (
@@ -24,7 +24,8 @@ export default function Board() {
           ))}
         </div>
       )}
-      <div className="surface overflow-hidden">
+      {/* ≥sm: table. Phones: one card per company — same data, no horizontal scroll. */}
+      <div className="surface hidden overflow-hidden sm:block">
         <table className="w-full text-[13.5px]">
           <thead><tr className="text-left"><Th>Company</Th><Th>Kept-rate</Th><Th right>Promised</Th><Th right>Broken</Th><Th right>Blocked</Th><Th right>Bond</Th></tr></thead>
           <tbody>
@@ -42,6 +43,24 @@ export default function Board() {
           </tbody>
         </table>
       </div>
+      <ul className="space-y-3 sm:hidden">
+        {(cs || []).map((c) => (
+          <li key={c.address}>
+            <Link href={`/console?c=${c.address}`} className="surface block p-4 transition-colors active:bg-surface-2">
+              <div className="flex items-start justify-between gap-3">
+                <div><p className="text-[15px] text-ink">{c.name}</p><p className="mono mt-0.5 text-[11px] text-ink-3">{short(c.address)}</p></div>
+                <span className={`mono text-[24px] leading-none ${rateTone(c.kept_rate)}`}>{ratePct(c.kept_rate)}</span>
+              </div>
+              <dl className="mt-3 grid grid-cols-4 gap-2 border-t border-hairline pt-3">
+                {[["Promised", c.committed, "text-ink-2"], ["Broken", c.upheld, "text-rose"], ["Blocked", c.blocked, "text-ink-2"], ["Bond", money(c.bond), "text-ink-2"]].map(([k, v, t]) => (
+                  <div key={k as string}><dt className="label !text-[10px]">{k}</dt><dd className={`mono mt-0.5 text-[13px] ${t}`}>{v}</dd></div>
+                ))}
+              </dl>
+            </Link>
+          </li>
+        ))}
+        {cs && !cs.length && <li className="surface p-8 text-center text-[13px] text-ink-3">No companies yet.</li>}
+      </ul>
       <p className="max-w-2xl text-[12.5px] leading-relaxed text-ink-3">Kept-rate = (kept + dismissed claims) ÷ (kept + dismissed + upheld claims). Blocked commitments never became promises, so they count neither way — they're shown because they tell you how often an agent <em>tried</em> to overpromise.</p>
     </div>
   );

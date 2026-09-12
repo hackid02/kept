@@ -67,6 +67,25 @@ The three moments that earn motion:
 
 Waiting states ("validators ruling…") use a shimmering status line that swaps steps, never a spinner alone.
 
+## Responsive
+
+One layout, three densities. Nothing is hidden on small screens — it is re-stacked. Breakpoints are Tailwind's: `sm` 640, `md` 768, `lg` 1024.
+
+| | phone (<640) | tablet (640–1023) | desktop (≥1024) |
+|---|---|---|---|
+| Primary nav | fixed bottom bar, 5 tabs, 56px, safe-area padded; "How it works" → "How" | top nav from `md` | top nav |
+| Demo | chat, then receipt rail, then feed/board, stacked | same, wider | chat left · sticky rail right |
+| In-chat "Receipt issued" row | scrolls to the rail (chat state kept) | same | opens `/r/[id]` |
+| Chat height | `100dvh − 300px`, min 420 | max 640 | 640 |
+| Receipt row | pill + amount on line 1, promise clamped to 2 lines | one line, truncated | one line |
+| Board | one card per company | table | table |
+| `/r/[id]` | verdict / claim panel **first**, receipt second | same | receipt left · panel right |
+| Display type | h1 34px · page titles 30px | 44 / 34 | 54 / 34 |
+| Page padding | 16px | 32px | 32px |
+| Bottom padding | 112px (bar clearance) | — | 96px |
+
+Rules: inputs are 16px on touch so iOS never zooms the page; tap targets ≥ 44px; grid children get `min-w-0` so `truncate` actually truncates; horizontal scroll strips (prompt chips) are masked at the edge and never widen their container; `viewport-fit=cover` with `env(safe-area-inset-bottom)` on the bar. Verified at 390×844 (iPhone), 768×1024 (iPad) and 1440×900 — `document.documentElement.scrollWidth` must equal the viewport width on every route.
+
 ## Copy
 
 - Declarative, present tense, ≤ 12 words per line where possible.

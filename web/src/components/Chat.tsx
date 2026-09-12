@@ -54,7 +54,7 @@ export default function Chat({ onReceipt, onChain }: { onReceipt?: (r: Receipt) 
   }
 
   return (
-    <section className="surface flex h-[640px] flex-col overflow-hidden" aria-label="SkyJet support chat">
+    <section className="surface flex h-[calc(100dvh-300px)] min-h-[420px] max-h-[640px] flex-col overflow-hidden lg:h-[640px] lg:max-h-none" aria-label="SkyJet support chat">
       <header className="flex h-12 shrink-0 items-center justify-between border-b border-hairline px-4">
         <div className="flex items-center gap-3">
           <span className="grid h-6 w-6 place-items-center rounded-md bg-surface-3 text-[10px] font-medium tracking-wide text-ink-2">SJ</span>
@@ -63,7 +63,7 @@ export default function Chat({ onReceipt, onChain }: { onReceipt?: (r: Receipt) 
             <p className="mt-1 text-[11px] text-ink-3">AI agent · replies are binding</p>
           </div>
         </div>
-        <span className="pill pill-accent"><Mark size={12} /> Protected by Kept</span>
+        <span className="pill pill-accent"><Mark size={12} /> <span className="hidden sm:inline">Protected by </span>Kept</span>
       </header>
 
       <div ref={pane} className="pane flex-1 overflow-y-auto px-4 py-5 sm:px-5">
@@ -91,8 +91,8 @@ export default function Chat({ onReceipt, onChain }: { onReceipt?: (r: Receipt) 
         </ol>
       </div>
 
-      <footer className="shrink-0 border-t border-hairline p-3">
-        <div className="mb-2 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [mask-image:linear-gradient(90deg,#000_92%,transparent)]">
+      <footer className="min-w-0 shrink-0 border-t border-hairline p-3">
+        <div className="mb-2 flex w-full min-w-0 gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [mask-image:linear-gradient(90deg,#000_92%,transparent)] [-webkit-overflow-scrolling:touch]">
           {PROMPTS.map((p) => (
             <button key={p} onClick={() => send(p)} disabled={busy || ready === false}
               className="btn btn-secondary btn-sm shrink-0 !font-normal text-ink-2 hover:text-ink">
@@ -101,7 +101,7 @@ export default function Chat({ onReceipt, onChain }: { onReceipt?: (r: Receipt) 
           ))}
         </div>
         <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); send(input); }}>
-          <input ref={field} className="input" placeholder="Message SkyJet…" value={input} onChange={(e) => setInput(e.target.value)} disabled={busy || ready === false} aria-label="Message" />
+          <input ref={field} className="input text-[16px] sm:!text-[14px]" placeholder="Message SkyJet…" value={input} onChange={(e) => setInput(e.target.value)} disabled={busy || ready === false} aria-label="Message" />
           <button className="btn btn-user" disabled={busy || !input.trim() || ready === false}>Send</button>
         </form>
       </footer>
@@ -112,7 +112,12 @@ export default function Chat({ onReceipt, onChain }: { onReceipt?: (r: Receipt) 
 /** In-chat marker: the promise became a receipt. The rail holds the full document. */
 function Issued({ r }: { r: Receipt }) {
   return (
-    <a href={`/r/${r.id}`} className="surface-2 group flex max-w-[560px] items-center gap-3 border-l-2 border-l-accent px-3.5 py-2.5 transition-colors duration-150 hover:bg-surface-3">
+    <a href={`/r/${r.id}`} onClick={(e) => {
+        // Stacked layout (phones/tablets): the rail is further down this page — go there, keep the chat.
+        const rail = document.getElementById("receipt-rail");
+        if (rail && window.matchMedia("(max-width: 1023px)").matches) { e.preventDefault(); rail.scrollIntoView({ behavior: "smooth", block: "start" }); }
+      }}
+      className="surface-2 group flex max-w-[560px] items-center gap-3 border-l-2 border-l-accent px-3.5 py-2.5 transition-colors duration-150 hover:bg-surface-3">
       <Mark size={16} draw />
       <span className="min-w-0 flex-1">
         <span className="block text-[13px] text-ink">Receipt issued <span className="mono text-ink-3">{r.id}</span></span>

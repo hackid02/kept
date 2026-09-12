@@ -33,19 +33,19 @@ export default function Home() {
   const skyjet = board.find((c) => c.name === "SkyJet Airlines");
 
   return (
-    <div className="space-y-16">
+    <div className="space-y-12 sm:space-y-16">
       {/* hero */}
       <section className="grid items-end gap-8 md:grid-cols-[1fr_auto]">
         <div className="max-w-2xl">
           <p className="label mb-4">Live on GenLayer</p>
-          <h1 className="serif text-[40px] leading-[1.05] tracking-[-0.02em] text-ink sm:text-[54px]">
+          <h1 className="serif text-[34px] leading-[1.06] tracking-[-0.02em] text-ink sm:text-[44px] lg:text-[54px]">
             Agents can talk.<br /><span className="italic text-ink-2">Kept</span> lets them give their word.
           </h1>
           <p className="mt-5 max-w-xl text-[15.5px] leading-[1.6] text-ink-2">
             Every promise SkyJet's agent makes to you becomes a receipt backed by a bond. Promises outside its authority never reach you. Promises it breaks are paid — ruled by validators, not by SkyJet.
           </p>
         </div>
-        <ol className="grid gap-2 text-[13px] text-ink-2 md:w-[280px]">
+        <ol className="grid gap-2 text-[13px] text-ink-2 sm:grid-cols-3 sm:gap-4 md:w-[280px] md:grid-cols-1 md:gap-2">
           {[["01", "Ask for a refund. You get a receipt."], ["02", "Try the jailbreak. Watch it get blocked."], ["03", "File a claim. The bond pays."]].map(([n, t]) => (
             <li key={n} className="flex gap-3 border-t border-hairline pt-2"><span className="mono text-ink-3">{n}</span><span>{t}</span></li>
           ))}
@@ -53,10 +53,10 @@ export default function Home() {
       </section>
 
       {/* the loop */}
-      <section className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,1fr)]" aria-label="Demo">
+      <section className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,1fr)]" aria-label="Demo">
         <Chat onChain={onChain} onReceipt={(r) => { setPinned((cur) => (r.status === "BLOCKED" && cur && cur.status === "ACTIVE" ? cur : r)); refresh(); }} />
 
-        <aside className="space-y-4 lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-88px)] lg:self-start lg:overflow-y-auto lg:pr-1 pane">
+        <aside id="receipt-rail" className="min-w-0 scroll-mt-20 space-y-4 lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-88px)] lg:self-start lg:overflow-y-auto lg:pr-1 pane">
           <AnimatePresence mode="wait" initial={false}>
             {pinned ? (
               <Rise key={pinned.id + pinned.status}>
@@ -97,7 +97,7 @@ export default function Home() {
 
       {/* what happened + board */}
       <section className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,1fr)]">
-        <div className="surface p-5">
+        <div className="surface min-w-0 p-4 sm:p-5">
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="text-[15px] font-medium text-ink">Receipts, live</h2>
             <Link href="/receipts" className="text-[12.5px] text-ink-3 hover:text-ink-2">All receipts →</Link>
@@ -106,7 +106,7 @@ export default function Home() {
             {feed.length ? feed.map((r) => <ReceiptRow key={r.id} r={r} mine={!!me.user && r.user.toLowerCase() === me.user.toLowerCase()} />) : <p className="py-6 text-center text-[13px] text-ink-3">No receipts yet.</p>}
           </div>
         </div>
-        <div className="surface p-5">
+        <div className="surface min-w-0 p-4 sm:p-5">
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="text-[15px] font-medium text-ink">Kept-rate</h2>
             <Link href="/board" className="text-[12.5px] text-ink-3 hover:text-ink-2">Board →</Link>
@@ -127,7 +127,7 @@ export default function Home() {
       </section>
 
       {/* how, briefly */}
-      <section className="grid gap-6 border-t border-hairline pt-10 md:grid-cols-3">
+      <section className="grid gap-8 border-t border-hairline pt-10 sm:grid-cols-3 sm:gap-6">
         {[
           ["Before the promise", "The company writes what its agent may promise, in plain English, and posts a bond. Every reply that commits to something is checked against that envelope by GenLayer validators — before it's sent."],
           ["The receipt", "Inside the envelope, the promise is minted as a receipt: what, how much, by when, the transcript. Public, unforgeable, held by the customer."],

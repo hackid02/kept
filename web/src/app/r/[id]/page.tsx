@@ -22,7 +22,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="mx-auto grid max-w-4xl gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(320px,1fr)]">
-      <div className="space-y-5">
+      <div className="order-2 min-w-0 space-y-5 lg:order-1">
         <ReceiptCard r={r} mine={mine} />
         <section className="surface p-5">
           <p className="label">Record</p>
@@ -41,7 +41,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
           <pre className="mono mt-4 whitespace-pre-wrap border-t border-hairline pt-4 text-[12px] leading-[1.7] text-ink-2">{r.transcript}</pre>
         </details>
       </div>
-      <aside className="lg:sticky lg:top-20 lg:self-start">
+      <aside className="order-1 min-w-0 lg:order-2 lg:sticky lg:top-20 lg:self-start">
         <ClaimPanel r={r} onChain={onChain} mine={mine} onUpdate={setR} />
       </aside>
     </div>

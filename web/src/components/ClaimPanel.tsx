@@ -100,7 +100,7 @@ export default function ClaimPanel({ r, onUpdate, onChain, mine }: { r: Receipt;
             <p className="mt-1 text-[12.5px] leading-relaxed text-ink-2">Validators read the transcript and your evidence. Upheld pays <span className="mono text-ink">{money(r.amount)}</span> from {r.company_name}'s bond{onChain ? " — the window is open now (demo due date is today)" : ""}.</p>
           </div>
           {!mine && <p className="rounded-md border border-amber/30 bg-amber/5 px-3 py-2 text-[12.5px] text-amber">Promised to a different visitor. Only they can claim it — make your own promise in the chat.</p>}
-          <textarea className="input min-h-[72px] resize-y !text-[13px]" placeholder="What happened? e.g. Nine business days, nothing on my statement. Screenshot attached to ticket #5512." value={evidence} onChange={(e) => setEvidence(e.target.value)} disabled={!!busy || !mine} />
+          <textarea className="input min-h-[72px] resize-y text-[16px] sm:!text-[13px]" placeholder="What happened? e.g. Nine business days, nothing on my statement. Screenshot attached to ticket #5512." value={evidence} onChange={(e) => setEvidence(e.target.value)} disabled={!!busy || !mine} />
           {!onChain && !due && (
             <label className="flex items-center gap-2 text-[12px] text-ink-3">Demo clock
               <input className="input !h-8 !w-36 !py-0 !text-[12px]" placeholder="YYYY-MM-DD" value={today} onChange={(e) => setToday(e.target.value)} />
@@ -118,7 +118,7 @@ export default function ClaimPanel({ r, onUpdate, onChain, mine }: { r: Receipt;
             <p className="text-[15px] font-medium text-ink">Mark as kept</p>
             <p className="mt-1 text-[13px] leading-relaxed text-ink-2">Only {r.company_name}'s key can do this. The proof becomes part of what validators see if the customer disputes it anyway.</p>
           </div>
-          <input className="input" placeholder="Proof — e.g. Refund RF-88213 posted to card ·4471 on 2026-09-14" value={proof} onChange={(e) => setProof(e.target.value)} disabled={!!busy} />
+          <input className="input text-[16px] sm:!text-[14px]" placeholder="Proof — e.g. Refund RF-88213 posted to card ·4471 on 2026-09-14" value={proof} onChange={(e) => setProof(e.target.value)} disabled={!!busy} />
           <div className="flex justify-end"><button className="btn btn-secondary" onClick={fulfil} disabled={!!busy || !proof.trim()}>{busy === "fulfil" ? "Submitting…" : "Mark kept"}</button></div>
         </div>
       )}

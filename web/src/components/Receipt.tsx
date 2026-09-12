@@ -57,13 +57,15 @@ function Row({ k, v, mono = true }: { k: string; v: string; mono?: boolean }) {
 /** One-line receipt for lists. */
 export function ReceiptRow({ r, mine = false }: { r: Receipt; mine?: boolean }) {
   return (
-    <Link href={`/r/${r.id}`} className="row-link -mx-3 flex items-center gap-4 px-3 py-3">
-      <StatusPill status={r.status} className="w-[92px] justify-center" />
-      <div className="min-w-0 flex-1">
-        <p className="serif italic truncate text-[16px] leading-tight text-ink">{r.promise}</p>
-        <p className="mono mt-0.5 truncate text-[11.5px] text-ink-3">{r.id} · {r.company_name} → {short(r.user)}{mine ? " (you)" : ""} · due {r.due}</p>
+    <Link href={`/r/${r.id}`} className="row-link -mx-3 flex flex-col gap-1.5 px-3 py-3 sm:flex-row sm:items-center sm:gap-4">
+      <div className="flex items-center justify-between sm:contents">
+        <StatusPill status={r.status} className="sm:w-[92px] sm:justify-center" />
+        <span className="mono text-[13px] text-ink-2 sm:order-last sm:w-16 sm:text-right">{r.amount > 0 ? money(r.amount) : ""}</span>
       </div>
-      <span className="mono w-16 text-right text-[13px] text-ink-2">{r.amount > 0 ? money(r.amount) : ""}</span>
+      <div className="min-w-0 flex-1">
+        <p className="serif italic text-[16px] leading-tight text-ink [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] overflow-hidden sm:truncate sm:[display:block]">{r.promise}</p>
+        <p className="mono mt-1 truncate text-[11.5px] text-ink-3">{r.id} · {r.company_name} → {short(r.user)}{mine ? " (you)" : ""} · due {r.due}</p>
+      </div>
     </Link>
   );
 }
