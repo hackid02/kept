@@ -16,8 +16,8 @@ export default function Home() {
   const onChain = me.backend === "chain";
 
   const refresh = () => {
-    fetch("/api/receipts?limit=6").then((r) => r.json()).then((d) => setFeed(d.receipts || [])).catch(() => {});
-    fetch("/api/leaderboard").then((r) => r.json()).then((d) => setBoard(d.companies || [])).catch(() => {});
+    fetch("/api/receipts?limit=6").then((r) => (r.ok ? r.json() : null)).then((d) => d && setFeed(d.receipts || [])).catch(() => {});
+    fetch("/api/leaderboard").then((r) => (r.ok ? r.json() : null)).then((d) => d && setBoard(d.companies || [])).catch(() => {});
   };
   useEffect(() => {
     fetch("/api/backend").then((r) => r.json()).then(setMe).catch(() => {});
@@ -113,12 +113,12 @@ export default function Home() {
           </div>
           <div className="hairline-y">
             {board.map((c) => (
-              <Link key={c.address} href={`/console?c=${c.address}`} className="row-link -mx-3 flex items-center justify-between px-3 py-3">
-                <div>
-                  <p className="text-[14px] text-ink">{c.name}</p>
-                  <p className="mono mt-0.5 text-[11.5px] text-ink-3">{c.committed} promised · {c.upheld} broken · {money(c.bond)} bonded</p>
-                </div>
-                <span className={`mono text-[20px] ${rateTone(c.kept_rate)}`}>{ratePct(c.kept_rate)}</span>
+              <Link key={c.address} href={`/console?c=${c.address}`} className="row-link -mx-3 flex items-center justify-between gap-4 px-3 py-3">
+                <span className="min-w-0">
+                  <span className="block truncate text-[14px] text-ink">{c.name}</span>
+                  <span className="mono mt-0.5 block truncate text-[11.5px] text-ink-3">{c.committed} promised · {c.upheld} broken · {money(c.bond)} bonded</span>
+                </span>
+                <span className={`mono shrink-0 text-[20px] ${rateTone(c.kept_rate)}`}>{ratePct(c.kept_rate)}</span>
               </Link>
             ))}
           </div>

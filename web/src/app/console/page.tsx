@@ -20,7 +20,8 @@ function Console() {
   const [sel, setSel] = useState<Company | null>(null);
   const [rs, setRs] = useState<Receipt[]>([]);
   useEffect(() => {
-    const load = () => fetch("/api/leaderboard").then((r) => r.json()).then((d) => {
+    const load = () => fetch("/api/leaderboard").then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (!d) return;
       const list: Company[] = d.companies || []; setCs(list);
       setSel((prev) => list.find((c) => c.address === (prev?.address || want)) || list.find((c) => c.name === "SkyJet Airlines") || list[0] || null);
     });
@@ -29,7 +30,7 @@ function Console() {
   const [full, setFull] = useState<Company | null>(null);
   useEffect(() => {
     if (!sel) return;
-    fetch(`/api/receipts?company=${sel.address}&limit=50`).then((r) => r.json()).then((d) => setRs(d.receipts || []));
+    fetch(`/api/receipts?company=${sel.address}&limit=50`).then((r) => (r.ok ? r.json() : null)).then((d) => d && setRs(d.receipts || [])).catch(() => {});
     if (!sel.envelope) fetch(`/api/company?c=${sel.address}`).then((r) => r.json()).then((d) => d.company && setFull(d.company)).catch(() => {});
   }, [sel]);
   const envelope = sel?.envelope || (full?.address === sel?.address ? full?.envelope : "") || "";

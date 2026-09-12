@@ -58,13 +58,29 @@ const TTL_MS = Number(process.env.KEPT_READ_TTL_MS || 8000);
 const cache = new Map<string, { at: number; value: Promise<any> }>();
 export function bustReadCache() { cache.clear(); }
 
+const READ_TIMEOUT_MS = Number(process.env.KEPT_READ_TIMEOUT_MS || 12_000);
+export const isRateLimit = (e: unknown) => /rate limit/i.test(String((e as any)?.message || e));
+
+/** Reject after `ms` — a stalled RPC must never hold a page hostage. */
+function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(`${what} timed out after ${ms} ms`)), ms);
+    p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+  });
+}
+
 async function read<T>(functionName: string, args: any[] = []): Promise<T> {
   const key = functionName + ":" + JSON.stringify(args, (_, v) => (v?.bytes ? Buffer.from(v.bytes).toString("hex") : v));
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.value as Promise<T>;
+  const once = () => withTimeout(client().readContract({ address: ADDRESS, functionName, args }) as Promise<T>, READ_TIMEOUT_MS, functionName);
   const value = (async () => {
-    const c = client();
-    return (await c.readContract({ address: ADDRESS, functionName, args })) as T;
+    try { return await once(); }
+    catch (e) {
+      // Studio allows ~30 req/min. A rate-limit is not an outage: wait a beat and retry once.
+      if (isRateLimit(e)) { await new Promise((r) => setTimeout(r, 2500)); return await once(); }
+      throw e;
+    }
   })();
   cache.set(key, { at: Date.now(), value });
   value.catch(() => cache.delete(key));

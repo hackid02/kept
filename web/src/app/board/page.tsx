@@ -8,7 +8,10 @@ export default function Board() {
   const [cs, setCs] = useState<Company[] | null>(null);
   const [st, setSt] = useState<Stats | null>(null);
   useEffect(() => {
-    const load = () => { fetch("/api/leaderboard").then((r) => r.json()).then((d) => setCs(d.companies)); fetch("/api/stats").then((r) => r.json()).then((d) => setSt(d.stats ?? d)); };
+    const load = () => {
+      fetch("/api/leaderboard").then((r) => (r.ok ? r.json() : null)).then((d) => d && setCs(d.companies)).catch(() => {});
+      fetch("/api/stats").then((r) => (r.ok ? r.json() : null)).then((d) => d && setSt(d.stats ?? d)).catch(() => {});
+    };
     load(); const t = setInterval(load, 20000); return () => clearInterval(t);
   }, []);
   return (

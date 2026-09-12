@@ -25,6 +25,8 @@ export function reportChainFailure(e: unknown) {
   const msg = String((e as any)?.message || e);
   // contract-level rejections (UserError) are real answers, not outages
   if (/only the|not yet due|cannot claim|bond insufficient|not registered|unknown receipt|not ACTIVE|envelope too short/i.test(msg)) return;
+  // rate limiting is congestion, not an outage — don't switch worlds for it
+  if (/rate limit/i.test(msg)) { console.warn("[kept] chain rate-limited; serving last known data"); return; }
   chainDownUntil = Date.now() + COOL_OFF_MS;
   console.warn("[kept] chain unavailable, falling back to simulator for 60s:", msg.slice(0, 200));
 }
@@ -64,10 +66,25 @@ function ensureSimCompany() {
   if (!sim.getCompany(companyAddress())) sim.register(companyAddress(), "SkyJet Airlines", SKYJET_ENVELOPE, 25000);
 }
 
-/** Run on chain; on transport failure mark the chain degraded and serve the simulator instead. */
-async function onChain<T>(chain: () => Promise<T>, fallback: () => T | Promise<T>): Promise<T> {
+/**
+ * Run on chain. On failure: if we have a recent good answer for this read, serve it (stale beats wrong-world);
+ * on a real transport failure mark the chain degraded and serve the simulator.
+ */
+const last = new Map<string, { at: number; value: unknown }>();
+const STALE_OK_MS = 10 * 60_000;
+async function onChain<T>(chain: () => Promise<T>, fallback: () => T | Promise<T>, key?: string): Promise<T> {
   if (backend() !== "chain") return fallback();
-  try { return await chain(); } catch (e) { reportChainFailure(e); return fallback(); }
+  try {
+    const v = await chain();
+    if (key) last.set(key, { at: Date.now(), value: v });
+    return v;
+  } catch (e) {
+    reportChainFailure(e);
+    const l = key ? last.get(key) : undefined;
+    if (l && Date.now() - l.at < STALE_OK_MS) return l.value as T;
+    if (/rate limit/i.test(String((e as any)?.message || e))) throw e; // nothing cached: let the route return 429, not sim data
+    return fallback();
+  }
 }
 
 export const kept = {
@@ -81,19 +98,19 @@ export const kept = {
     return sim.getCompany(address);
   },
   async leaderboard(): Promise<Company[]> {
-    return onChain(() => chainApi.leaderboard(), () => sim.leaderboard());
+    return onChain(() => chainApi.leaderboard(), () => sim.leaderboard(), "leaderboard");
   },
   async listReceipts(limit = 50): Promise<Receipt[]> {
-    return onChain(() => chainApi.listReceipts(limit), () => sim.listReceipts(limit));
+    return onChain(() => chainApi.listReceipts(limit), () => sim.listReceipts(limit), "receipts:" + limit);
   },
   async receiptsForUser(u: string): Promise<Receipt[]> {
-    return onChain(() => chainApi.receiptsForUser(u), () => sim.receiptsForUser(u));
+    return onChain(() => chainApi.receiptsForUser(u), () => sim.receiptsForUser(u), "user:" + u);
   },
   async receiptsForCompany(c: string): Promise<Receipt[]> {
-    return onChain(() => chainApi.receiptsForCompany(c), () => sim.receiptsForCompany(c));
+    return onChain(() => chainApi.receiptsForCompany(c), () => sim.receiptsForCompany(c), "company:" + c);
   },
   async stats(): Promise<Stats> {
-    return onChain(() => chainApi.stats(), () => sim.stats());
+    return onChain(() => chainApi.stats(), () => sim.stats(), "stats");
   },
 
   // ---- writes (server-held demo keys; wallet-signed writes go straight from the browser)

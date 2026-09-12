@@ -9,7 +9,7 @@ export default function ReceiptsPage() {
   const [only, setOnly] = useState<"all" | "mine">("all");
   useEffect(() => {
     fetch("/api/backend").then((r) => r.json()).then(setMe).catch(() => {});
-    const load = () => fetch("/api/receipts?limit=200").then((r) => r.json()).then((d) => setItems(d.receipts || []));
+    const load = () => fetch("/api/receipts?limit=200").then((r) => (r.ok ? r.json() : null)).then((d) => d && setItems(d.receipts || [])).catch(() => {});
     load(); const t = setInterval(load, 20000); return () => clearInterval(t);
   }, []);
   const list = (items || []).filter((r) => only === "all" || (me.user && r.user.toLowerCase() === me.user.toLowerCase()));
