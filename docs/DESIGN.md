@@ -86,6 +86,26 @@ One layout, three densities. Nothing is hidden on small screens — it is re-sta
 
 Rules: inputs are 16px on touch so iOS never zooms the page; tap targets ≥ 44px; grid children get `min-w-0` so `truncate` actually truncates; horizontal scroll strips (prompt chips) are masked at the edge and never widen their container; `viewport-fit=cover` with `env(safe-area-inset-bottom)` on the bar. Verified at 390×844 (iPhone), 768×1024 (iPad) and 1440×900 — `document.documentElement.scrollWidth` must equal the viewport width on every route.
 
+## Themes
+
+Two themes, one set of hues. Dark is the default ("the notary's desk at night"); light is the same desk by day — ivory paper, not pure white, so the mint/amber/rose still read as ink rather than neon. Every colour is a CSS variable (`rgb(var(--ink) / <alpha>)`), so components carry no theme knowledge and Tailwind opacity modifiers keep working.
+
+| token | dark | light | note |
+|---|---|---|---|
+| canvas | `#0A0A0B` | `#F6F6F3` | page |
+| surface / 2 / 3 | `#111113` `#17171A` `#1F1F23` | `#FFFFFF` `#F7F7F5` `#EEEEEB` | cards → inputs → raised |
+| hairline / strong | white 8% / 14% | black 9% / 18% | borders, never shadows |
+| ink / 2 / 3 | `#F2F2F0` `#A3A3A0` `#7D7D79` | `#161615` `#5A5A57` `#6F6F6B` | ink-3 ≥ 4.5:1 on surface in both |
+| accent | `#7FD8BE` (ink `#06231B`) | `#146E51` (ink white) | 11.2:1 / 5.7:1 |
+| amber · rose | `#D9A441` · `#D96C6C` | `#8A5F0A` · `#B83A3A` | ≥ 5.2:1 on light |
+| user (chat) | `#2F6BFF` | `#2458E6` | only blue on the page |
+
+Rules: the theme is decided before first paint by a 4-line inline script (stored choice → OS preference → dark); the toggle in the nav shows the *current* state (moon in dark, sun in light) and its label says what it will do; the choice persists in `localStorage` and the app follows OS changes until the user picks. `color-scheme` is set per theme so native controls match. `theme-color` follows. Print forces the light palette and hides chrome — a receipt is a document.
+
+## Essentials (the layer nobody screenshots)
+
+404 (`not-found.tsx`) and error boundaries (`error.tsx`, `global-error.tsx` inline-styled) in the brand voice; missing receipt ids are real 404 statuses. Favicon + apple icon + manifest generated from the mark. Open Graph / Twitter cards for the site and **per receipt** (promise in serif, status edge, value · due · from). Per-route titles, canonical, `robots.txt`, `sitemap.xml` with every receipt. Security headers: CSP (self only, no third-party origins at all), HSTS, `frame-ancestors 'none'`, nosniff, Referrer-Policy, Permissions-Policy. `/privacy` in plain English (what's public on-chain, the one cookie, no tracking, testnet). Skip link first in tab order; `Enter` submits chat; focus rings on every control; `prefers-reduced-motion` honoured; axe WCAG 2.1 AA clean on every route in both themes. Deliberately absent: analytics, cookie banner (nothing to consent to), third-party scripts.
+
 ## Copy
 
 - Declarative, present tense, ≤ 12 words per line where possible.
