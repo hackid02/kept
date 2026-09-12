@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+export const metadata: Metadata = { title: "How it works", description: "Envelope, check, receipt, claim, payout — how Kept makes an AI agent's promises enforceable." };
 
 const steps = [
   ["The envelope", "A company writes what its agent may promise, in plain English, and posts a bond in the Kept contract on GenLayer.", "Refunds up to $500 per customer. Fee waivers up to $50. Reschedules up to 30 days at no charge. Nothing else."],

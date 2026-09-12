@@ -30,7 +30,7 @@ export default function Board() {
           <thead><tr className="text-left"><Th>Company</Th><Th>Kept-rate</Th><Th right>Promised</Th><Th right>Broken</Th><Th right>Blocked</Th><Th right>Bond</Th></tr></thead>
           <tbody>
             {(cs || []).map((c) => (
-              <tr key={c.address} className="border-t border-hairline transition-colors hover:bg-white/[.02]">
+              <tr key={c.address} className="border-t border-hairline transition-colors hover:bg-wash/[.03]">
                 <td className="px-5 py-4"><Link href={`/console?c=${c.address}`} className="text-ink hover:underline">{c.name}</Link><p className="mono mt-0.5 text-[11px] text-ink-3">{short(c.address)}</p></td>
                 <td className={`mono px-5 py-4 text-[22px] ${rateTone(c.kept_rate)}`}>{ratePct(c.kept_rate)}</td>
                 <td className="mono px-5 py-4 text-right text-ink-2">{c.committed}</td>

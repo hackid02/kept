@@ -56,7 +56,7 @@ export default function Home() {
       <section className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,1fr)]" aria-label="Demo">
         <Chat onChain={onChain} onReceipt={(r) => { setPinned((cur) => (r.status === "BLOCKED" && cur && cur.status === "ACTIVE" ? cur : r)); refresh(); }} />
 
-        <aside id="receipt-rail" className="min-w-0 scroll-mt-20 space-y-4 lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-88px)] lg:self-start lg:overflow-y-auto lg:pr-1 pane">
+        <div id="receipt-rail" aria-label="Your receipt" className="min-w-0 scroll-mt-20 space-y-4 lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-88px)] lg:self-start lg:overflow-y-auto lg:pr-1 pane">
           <AnimatePresence mode="wait" initial={false}>
             {pinned ? (
               <Rise key={pinned.id + pinned.status}>
@@ -92,7 +92,7 @@ export default function Home() {
               </div>
             </div>
           )}
-        </aside>
+        </div>
       </section>
 
       {/* what happened + board */}

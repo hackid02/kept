@@ -87,7 +87,7 @@ export default function ClaimPanel({ r, onUpdate, onChain, mine }: { r: Receipt;
       <div className="mb-3 flex gap-1 rounded-lg bg-surface-2 p-1" role="tablist">
         {(["customer", "company"] as const).map((s) => (
           <button key={s} role="tab" aria-selected={side === s} onClick={() => setSide(s)}
-            className={`h-7 flex-1 rounded-md text-[12px] font-medium transition-colors duration-150 ${side === s ? "bg-surface-3 text-ink" : "text-ink-3 hover:text-ink-2"}`}>
+            className={`h-7 flex-1 rounded-md text-[12px] font-medium transition-colors duration-150 ${side === s ? "bg-surface-3 text-ink" : "text-ink-2 hover:text-ink"}`}>
             {s === "customer" ? "I'm the customer" : `I'm ${r.company_name.split(" ")[0]}`}
           </button>
         ))}

@@ -1,14 +1,20 @@
 import type { Config } from "tailwindcss";
+
+/** Colours resolve to CSS variables so both themes share one utility set; `<alpha-value>` keeps /50 modifiers working. */
+const v = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
+
 const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
+  darkMode: ["selector", '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
-        canvas: "#0a0a0b", surface: "#111113", "surface-2": "#17171a", "surface-3": "#1f1f23",
-        ink: "#f2f2f0", "ink-2": "#a3a3a0", "ink-3": "#6b6b68",
-        accent: "#7fd8be", amber: "#d9a441", rose: "#d96c6c", user: "#2f6bff",
+        canvas: v("canvas"), surface: v("surface"), "surface-2": v("surface-2"), "surface-3": v("surface-3"),
+        ink: v("ink"), "ink-2": v("ink-2"), "ink-3": v("ink-3"),
+        accent: v("accent"), "accent-ink": v("accent-ink"), amber: v("amber"), rose: v("rose"), user: v("user"), wash: v("wash"),
       },
-      borderColor: { hairline: "rgba(255,255,255,.08)", "hairline-strong": "rgba(255,255,255,.14)" },
+      borderColor: { hairline: "var(--hairline)", "hairline-strong": "var(--hairline-strong)" },
+      backgroundColor: { hairline: "var(--hairline)" },
       fontFamily: { sans: ["var(--font-sans)", "system-ui", "sans-serif"], serif: ["var(--font-serif)", "Georgia", "serif"], mono: ["var(--font-mono)", "ui-monospace", "monospace"] },
       maxWidth: { page: "1120px" },
       transitionTimingFunction: { out: "cubic-bezier(.23,1,.32,1)", "in-out": "cubic-bezier(.77,0,.175,1)" },

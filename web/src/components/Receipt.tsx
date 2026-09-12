@@ -12,7 +12,8 @@ const edge: Record<Receipt["status"], string> = {
   ACTIVE: "border-l-amber", BLOCKED: "border-l-rose", FULFILLED: "border-l-accent", UPHELD: "border-l-accent", DISMISSED: "border-l-ink-3",
 };
 
-export function ReceiptCard({ r, compact = false, mine = false, href }: { r: Receipt; compact?: boolean; mine?: boolean; href?: string }) {
+export function ReceiptCard({ r, compact = false, mine = false, href, heading = "h2" }: { r: Receipt; compact?: boolean; mine?: boolean; href?: string; heading?: "h1" | "h2" | "p" }) {
+  const H = heading;
   const body = (
     <article className={`surface border-l-2 ${edge[r.status]} ${compact ? "p-4" : "p-5"}`} aria-label={`Receipt ${r.id}`}>
       <header className="mb-3 flex items-center justify-between gap-3">
@@ -24,9 +25,9 @@ export function ReceiptCard({ r, compact = false, mine = false, href }: { r: Rec
         <StatusPill status={r.status} />
       </header>
 
-      <p className={`serif italic text-ink ${compact ? "text-[19px] leading-[1.3]" : "text-[22px] leading-[1.3]"} tracking-[-0.01em]`}>
-        {r.promise}
-      </p>
+      {compact
+        ? <p className="serif italic text-[19px] leading-[1.3] tracking-[-0.01em] text-ink">{r.promise}</p>
+        : <H className="serif italic text-[22px] leading-[1.3] tracking-[-0.01em] text-ink">{r.promise}</H>}
 
       <dl className={`mt-4 grid gap-x-6 gap-y-2 ${compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-4"}`}>
         <Row k="Value" v={r.amount > 0 ? money(r.amount) : "—"} />

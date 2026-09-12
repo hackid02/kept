@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "./Logo";
 import BackendBadge from "./BackendBadge";
+import ThemeToggle from "./Theme";
 
 const links = [
   { href: "/", label: "Demo" },
@@ -24,13 +25,16 @@ export default function Nav() {
             const active = l.href === "/" ? path === "/" : path.startsWith(l.href);
             return (
               <Link key={l.href} href={l.href}
-                className={`h-8 rounded-md px-3 text-[13px] leading-8 transition-colors duration-150 ${active ? "bg-white/[.06] text-ink" : "text-ink-2 hover:text-ink"}`}>
+                className={`h-8 rounded-md px-3 text-[13px] leading-8 transition-colors duration-150 ${active ? "bg-wash/[.06] text-ink" : "text-ink-2 hover:text-ink"}`}>
                 {l.label}
               </Link>
             );
           })}
         </nav>
-        <BackendBadge />
+        <div className="flex items-center gap-1.5">
+          <BackendBadge />
+          <ThemeToggle />
+        </div>
       </div>
     </header>
       {/* Phones: primary nav is a bottom bar within thumb reach. Sibling of the header, not a child:

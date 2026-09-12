@@ -21,7 +21,7 @@ export default function ReceiptsPage() {
           <p className="mt-2 text-[13.5px] text-ink-2">Every commitment any protected agent made to a person. Newest first. Public by design.</p>
         </div>
         <div className="flex gap-1 rounded-lg bg-surface-2 p-1">
-          {(["all", "mine"] as const).map((k) => <button key={k} onClick={() => setOnly(k)} className={`h-8 rounded-md px-3 text-[12.5px] font-medium transition-colors ${only === k ? "bg-surface-3 text-ink" : "text-ink-3 hover:text-ink-2"}`}>{k === "all" ? "All" : "Mine"}</button>)}
+          {(["all", "mine"] as const).map((k) => <button key={k} onClick={() => setOnly(k)} className={`h-8 rounded-md px-3 text-[12.5px] font-medium transition-colors ${only === k ? "bg-surface-3 text-ink" : "text-ink-2 hover:text-ink"}`}>{k === "all" ? "All" : "Mine"}</button>)}
         </div>
       </header>
       <div className="surface min-w-0 p-4 sm:p-5">
