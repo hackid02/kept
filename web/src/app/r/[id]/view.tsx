@@ -30,7 +30,7 @@ export default function ReceiptView({ params }: { params: { id: string } }) {
             <Meta k="Company" v={<Link className="text-ink hover:underline" href={`/console?c=${r.company}`}>{r.company_name}</Link>} sub={r.company} />
             <Meta k="Promised to" v={<span className="mono">{short(r.user)}{mine ? " · you" : ""}</span>} sub={r.user} />
             <Meta k="Created" v={<span className="mono">{r.created_at.slice(0, 19).replace("T", " ")} UTC</span>} />
-            <Meta k="Anchored" v={onChain ? (r.tx ? <a className="mono text-ink hover:underline" href={`https://genlayer-explorer.vercel.app/tx/${r.tx}`} target="_blank" rel="noreferrer">{short(r.tx)}</a> : <span className="mono">GenLayer · read from contract</span>) : <span>Simulator twin</span>} />
+            <Meta k="Anchored" v={onChain ? (r.tx ? <a className="mono text-ink hover:underline" href={`https://explorer-studio.genlayer.com/tx/${r.tx}`} target="_blank" rel="noreferrer">{short(r.tx)}</a> : <span className="mono">GenLayer · read from contract</span>) : <span>Simulator twin</span>} />
             {r.proof && <Meta k="Company proof" v={r.proof} wide />}
             {r.evidence && <Meta k="Customer evidence" v={r.evidence} wide />}
             {r.verdict_reason && <Meta k="Validators' reasoning" v={r.verdict_reason} wide />}

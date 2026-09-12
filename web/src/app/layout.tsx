@@ -48,7 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <a className="transition-colors hover:text-ink-2" href="/how">How it works</a>
               <a className="transition-colors hover:text-ink-2" href="/privacy">Privacy</a>
               <a className="transition-colors hover:text-ink-2" href="https://github.com/hackid02/kept" target="_blank" rel="noreferrer">GitHub</a>
-              <a className="transition-colors hover:text-ink-2" href="https://genlayer-explorer.vercel.app" target="_blank" rel="noreferrer">Explorer</a>
+              <a className="transition-colors hover:text-ink-2" href="https://explorer-studio.genlayer.com/address/0x9a4CF8C07321e3ba85e5b60835203C97C1632F57" target="_blank" rel="noreferrer">Explorer</a>
             </nav>
           </div>
         </footer>
