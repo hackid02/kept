@@ -34,7 +34,7 @@ Live on Studio with a real airline agent to try (and try to jailbreak). Not agen
 ## 04 · Demo video
 YouTube URL — _to add after upload_
 
-Upload `kept_demo.mp4` (81 s, 1920×1080, real recordings of the live site on Studio — receipt KPT-0040-2B94 issued, jailbreak blocked, claim ruled Upheld, all on chain). Suggested YouTube title: **Kept — enforceable promises from AI agents (GenLayer Agent Tank demo)**. Unlisted is fine.
+Upload `kept_demo.mp4` (81 s, 1920×1080, real recordings of the live site on Studio — receipt KPT-0044-2B94 issued, jailbreak blocked, claim ruled Upheld, all on chain). Suggested YouTube title: **Kept — enforceable promises from AI agents (GenLayer Agent Tank demo)**. Unlisted is fine.
 
 ## 05 · How-to (steps)
 1. **Open the live demo** — Go to https://kept-receipts.vercel.app. The badge at the top right shows "GenLayer Studio" (live chain) and the contract address.
