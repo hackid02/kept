@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Mark } from "./Logo";
-import { Rise, Thinking, AnimatePresence } from "./Motion";
+import { Rise, Thinking, AnimatePresence, motion } from "./Motion";
 import { money } from "./Status";
 import type { ChatMessage, Receipt } from "@/lib/types";
 
@@ -17,7 +17,7 @@ const PROMPTS = [
 ];
 const STEPS = ["Agent is replying", "Checking the reply for a commitment", "GenLayer validators reading the envelope", "Waiting for consensus"];
 
-export default function Chat({ onReceipt, onChain }: { onReceipt?: (r: Receipt) => void; onChain: boolean }) {
+export default function Chat({ onReceipt, onChain, bond }: { onReceipt?: (r: Receipt) => void; onChain: boolean; bond?: number }) {
   const [rows, setRows] = useState<Row[]>([{ kind: "msg", m: { role: "assistant", content: "Hi, I'm SkyJet's support agent. What happened with your trip?" } }]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -89,6 +89,23 @@ export default function Chat({ onReceipt, onChain }: { onReceipt?: (r: Receipt) 
           )}
           {error && <li className="rounded-lg border border-rose/30 bg-rose/5 px-3 py-2 text-[13px] text-rose">{error}</li>}
         </ol>
+        {/* Before the first message: what makes this chat different. Fades away once the conversation starts. */}
+        <AnimatePresence>
+          {rows.length === 1 && !busy && (
+            <motion.div key="primer" className="mt-6 grid grid-cols-3 gap-2 sm:mt-10 sm:gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.15 } }} transition={{ duration: 0.4, delay: 0.3 }}>
+              {[
+                ["Says it, owes it", "Any commitment in a reply becomes a receipt with a due date."],
+                ["Can't overpromise", "Validators check every commitment against SkyJet's envelope first."],
+                ["Bond behind it", `${bond ? money(bond) + " posted" : "A bond is posted"}. Broken promises are paid from it.`],
+              ].map(([h, p], i) => (
+                <motion.div key={h} className="rounded-[10px] border border-dashed border-hairline-strong p-2.5 sm:p-3" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.4 + i * 0.08 }}>
+                  <p className="flex items-center gap-2 text-[12px] font-medium leading-tight text-ink sm:text-[12.5px]"><Mark size={12} /><span>{h}</span></p>
+                  <p className="mt-1 hidden text-[12px] leading-relaxed text-ink-3 sm:block">{p}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <footer className="min-w-0 shrink-0 border-t border-hairline p-3">

@@ -1,16 +1,20 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ratePct, rateTone, short, money } from "@/components/Status";
+import { short, money } from "@/components/Status";
+import { RateRing, Count, OutcomeBars } from "@/components/Viz";
+import type { Receipt } from "@/lib/types";
 import type { Company, Stats } from "@/lib/types";
 
 export default function Board() {
   const [cs, setCs] = useState<Company[] | null>(null);
   const [st, setSt] = useState<Stats | null>(null);
+  const [rs, setRs] = useState<Receipt[]>([]);
   useEffect(() => {
     const load = () => {
       fetch("/api/leaderboard").then((r) => (r.ok ? r.json() : null)).then((d) => d && setCs(d.companies)).catch(() => {});
       fetch("/api/stats").then((r) => (r.ok ? r.json() : null)).then((d) => d && setSt(d.stats ?? d)).catch(() => {});
+      fetch("/api/receipts?limit=40").then((r) => (r.ok ? r.json() : null)).then((d) => d && setRs(d.receipts || [])).catch(() => {});
     };
     load(); const t = setInterval(load, 20000); return () => clearInterval(t);
   }, []);
@@ -22,9 +26,18 @@ export default function Board() {
       </header>
       {st && (
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-hairline bg-hairline sm:grid-cols-4">
-          {[["Companies", st.companies], ["Receipts", st.receipts], ["Blocked before sending", st.blocked], ["Paid from bonds", money(st.paid_out)]].map(([k, v]) => (
-            <div key={k as string} className="bg-surface p-4"><p className="label">{k}</p><p className="mono mt-1.5 text-[24px] text-ink">{v}</p></div>
+          {[["Companies", st.companies, ""], ["Receipts", st.receipts, ""], ["Blocked before sending", st.blocked, ""], ["Paid from bonds", st.paid_out, "$"]].map(([k, v, pre]) => (
+            <div key={k as string} className="bg-surface p-4"><p className="label">{k}</p><p className="mt-1.5 text-[24px] text-ink"><Count to={v as number} prefix={pre as string} /></p></div>
           ))}
+        </div>
+      )}
+      {rs.length > 0 && (
+        <div className="surface flex flex-wrap items-end justify-between gap-4 p-4 sm:p-5">
+          <div><p className="label">Last {Math.min(rs.length, 40)} receipts</p><p className="mt-1 text-[12.5px] text-ink-3">Newest on the right. Height is outcome, not amount.</p></div>
+          <div className="flex items-end gap-5">
+            <OutcomeBars statuses={[...rs].reverse().map((r) => r.status)} height={40} max={40} />
+            <span className="mono hidden text-[10.5px] text-ink-3 sm:block"><i className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-amber align-middle" />open<br /><i className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-rose align-middle" />blocked<br /><i className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-ink align-middle" />upheld</span>
+          </div>
         </div>
       )}
       {/* ≥sm: table. Phones: one card per company — same data, no horizontal scroll. */}
@@ -35,7 +48,7 @@ export default function Board() {
             {(cs || []).map((c) => (
               <tr key={c.address} className="border-t border-hairline transition-colors hover:bg-wash/[.03]">
                 <td className="px-5 py-4"><Link href={`/console?c=${c.address}`} className="text-ink hover:underline">{c.name}</Link><p className="mono mt-0.5 text-[11px] text-ink-3">{short(c.address)}</p></td>
-                <td className={`mono px-5 py-4 text-[22px] ${rateTone(c.kept_rate)}`}>{ratePct(c.kept_rate)}</td>
+                <td className="px-5 py-3"><RateRing bp={c.kept_rate} size={52} stroke={4} /></td>
                 <td className="mono px-5 py-4 text-right text-ink-2">{c.committed}</td>
                 <td className="mono px-5 py-4 text-right text-rose">{c.upheld}</td>
                 <td className="mono px-5 py-4 text-right text-ink-2">{c.blocked}</td>
@@ -52,7 +65,7 @@ export default function Board() {
             <Link href={`/console?c=${c.address}`} className="surface block p-4 transition-colors active:bg-surface-2">
               <div className="flex items-start justify-between gap-3">
                 <div><p className="text-[15px] text-ink">{c.name}</p><p className="mono mt-0.5 text-[11px] text-ink-3">{short(c.address)}</p></div>
-                <span className={`mono text-[24px] leading-none ${rateTone(c.kept_rate)}`}>{ratePct(c.kept_rate)}</span>
+                <RateRing bp={c.kept_rate} size={56} stroke={4} />
               </div>
               <dl className="mt-3 grid grid-cols-4 gap-2 border-t border-hairline pt-3">
                 {[["Promised", c.committed, "text-ink-2"], ["Broken", c.upheld, "text-rose"], ["Blocked", c.blocked, "text-ink-2"], ["Bond", money(c.bond), "text-ink-2"]].map(([k, v, t]) => (

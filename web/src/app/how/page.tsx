@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { StepGlyph, HeroFlow } from "@/components/Viz";
 export const metadata: Metadata = { title: "How it works", description: "Envelope, check, receipt, claim, payout — how Kept makes an AI agent's promises enforceable." };
 
 const steps = [
@@ -17,11 +18,12 @@ export default function How() {
         <h1 className="serif text-[34px] leading-[1.05] tracking-[-0.02em] text-ink sm:text-[40px]">How Kept works</h1>
         <p className="mt-4 max-w-2xl text-[15px] leading-[1.6] text-ink-2">AI agents now speak for companies, and courts have ruled that what they say binds the company. Kept makes that enforceable at chat speed — and puts the guardrail before the promise, not after the lawsuit.</p>
       </header>
+      <div className="surface overflow-hidden p-3 sm:p-5"><HeroFlow className="h-auto w-full" /></div>
 
       <ol className="space-y-0 border-t border-hairline">
         {steps.map(([h, p, q], i) => (
-          <li key={h} className="grid gap-2 border-b border-hairline py-6 md:grid-cols-[72px_1fr] md:gap-4 md:py-7">
-            <span className="mono text-[13px] text-ink-3">0{i + 1}</span>
+          <li key={h} className="grid gap-3 border-b border-hairline py-6 md:grid-cols-[96px_1fr] md:gap-4 md:py-7">
+            <div className="flex items-start gap-3 md:flex-col md:gap-2"><span className="mono text-[13px] text-ink-3">0{i + 1}</span><StepGlyph n={i + 1} className="h-12 w-12 md:h-14 md:w-14" /></div>
             <div>
               <h2 className="serif text-[24px] text-ink">{h}</h2>
               <p className="mt-2 text-[14px] leading-[1.65] text-ink-2">{p}</p>
