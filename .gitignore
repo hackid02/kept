@@ -10,3 +10,6 @@ dist/
 deployments.local.json
 .kept-sim.json
 .vercel
+
+# demo film lives on YouTube; keep the 35 MB mp4 out of the repo
+docs/kept_demo.mp4
