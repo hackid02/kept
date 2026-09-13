@@ -14,6 +14,7 @@ export interface Receipt {
   amount: number;
   due: string;
   transcript: string;
+  envelope?: string;      // the company's envelope frozen at commit time (v2 contract)
   status: ReceiptStatus;
   check_reason: string;
   proof: string;
@@ -36,6 +37,8 @@ export interface Company {
   upheld: number;
   dismissed: number;
   kept_rate: number; // basis points, -1 = no data
+  outstanding?: number; // sum of ACTIVE promise amounts, reserved from the bond (v2 contract)
+  available?: number;   // bond - outstanding
   registered_at?: string;
 }
 

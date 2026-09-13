@@ -43,6 +43,10 @@ function save(s: SimState) {
 }
 const now = () => new Date().toISOString();
 const day = (s: string) => (s || "").slice(0, 10);
+function validDate(s: string) {
+  const d = day(s); if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
+  const t = new Date(d + "T00:00:00Z"); return !Number.isNaN(t.getTime()) && t.toISOString().slice(0, 10) === d;
+}
 
 export function rate(c: Company): number {
   const honored = c.fulfilled + c.dismissed;
@@ -68,14 +72,15 @@ export const sim = {
     const a = address.toLowerCase();
     if (envelope.trim().length < 10) throw new Error("envelope too short");
     const existing = s.companies[a];
+    if (!existing && name.trim().length < 2) throw new Error("name too short");
     const c: Company = existing
-      ? { ...existing, name, envelope, bond: existing.bond + bond }
+      ? { ...existing, envelope, bond: existing.bond + bond }            // name is fixed; envelope applies to future promises
       : {
-          address: a, name, envelope, bond,
+          address: a, name, envelope, bond, outstanding: 0,
           committed: 0, blocked: 0, fulfilled: 0, upheld: 0, dismissed: 0,
           kept_rate: -1, registered_at: now(),
         };
-    c.kept_rate = rate(c);
+    c.kept_rate = rate(c); c.available = c.bond - (c.outstanding ?? 0);
     s.companies[a] = c;
     save(s);
     return c;
@@ -88,9 +93,11 @@ export const sim = {
     const ca = company.toLowerCase();
     const c = s.companies[ca];
     if (!c) throw new Error("company not registered");
+    if (user.toLowerCase() === ca) throw new Error("a company cannot make promises to itself");
     if (!promise.trim()) throw new Error("empty promise");
-    if (day(due).length !== 10) throw new Error("due must be ISO date (YYYY-MM-DD)");
-    if (c.bond < amount) throw new Error("bond insufficient to back this amount");
+    if (!validDate(due)) throw new Error("due must be a calendar date (YYYY-MM-DD)");
+    const available = c.bond - (c.outstanding ?? 0);
+    if (available < amount) throw new Error(`bond insufficient: ${available} available, ${amount} requested`);
 
     const verdict = await judgeEnvelope(c.envelope, promise, amount, due, transcript);
 
@@ -99,11 +106,12 @@ export const sim = {
     const t = now();
     const r: Receipt = {
       id, company: ca, company_name: c.name, user: user.toLowerCase(), promise, amount, due, transcript,
+      envelope: c.envelope,                                             // frozen at commit, like the contract
       status: verdict.inside ? "ACTIVE" : "BLOCKED", check_reason: verdict.reason,
       proof: "", evidence: "", verdict_reason: "", payout: 0, created_at: t, updated_at: t, tx: fakeTx(),
     };
-    if (verdict.inside) c.committed += 1; else c.blocked += 1;
-    c.kept_rate = rate(c);
+    if (verdict.inside) { c.committed += 1; c.outstanding = (c.outstanding ?? 0) + amount; } else c.blocked += 1;
+    c.kept_rate = rate(c); c.available = c.bond - (c.outstanding ?? 0);
     s.receipts[id] = r;
     s.order.push(id);
     save(s);
@@ -117,7 +125,8 @@ export const sim = {
     if (r.company !== company.toLowerCase()) throw new Error("only the company can mark fulfilled");
     if (r.status !== "ACTIVE") throw new Error(`receipt is ${r.status}, not ACTIVE`);
     r.proof = proof; r.status = "FULFILLED"; r.updated_at = now();
-    const c = s.companies[r.company]; c.fulfilled += 1; c.kept_rate = rate(c);
+    const c = s.companies[r.company]; c.fulfilled += 1; c.outstanding = Math.max(0, (c.outstanding ?? 0) - r.amount);
+    c.kept_rate = rate(c); c.available = c.bond - c.outstanding;
     save(s);
     return r;
   },
@@ -132,10 +141,11 @@ export const sim = {
     if (td < day(r.due)) throw new Error(`not yet due (due ${r.due}, today ${td})`);
     const c = s.companies[r.company];
 
-    const v = await judgeClaim(c.envelope, r.promise, r.amount, r.due, td, r.transcript, r.proof, evidence);
+    const v = await judgeClaim(r.envelope ?? c.envelope, r.promise, r.amount, r.due, td, r.transcript, r.proof, evidence);
 
     r.evidence = evidence; r.verdict_reason = v.reason; r.updated_at = now(); r.tx = fakeTx();
-    if (r.status === "FULFILLED") c.fulfilled -= 1; // claim supersedes the company's own word
+    if (r.status === "FULFILLED") c.fulfilled = Math.max(0, c.fulfilled - 1); // claim supersedes the company's own word
+    else c.outstanding = Math.max(0, (c.outstanding ?? 0) - r.amount);
     if (v.verdict === "UPHOLD") {
       r.status = "UPHELD"; c.upheld += 1;
       const pay = Math.min(r.amount, c.bond);
@@ -143,7 +153,7 @@ export const sim = {
     } else {
       r.status = "DISMISSED"; c.dismissed += 1;
     }
-    c.kept_rate = rate(c);
+    c.kept_rate = rate(c); c.available = c.bond - (c.outstanding ?? 0);
     save(s);
     return { ...r, votes: v.votes } as Receipt;
   },

@@ -27,7 +27,11 @@ export default function Home() {
   // pin this visitor's latest receipt on load
   useEffect(() => {
     if (!me.user) return;
-    fetch(`/api/receipts?user=${me.user}&limit=1`).then((r) => r.json()).then((d) => { if (d.receipts?.[0] && !pinned) setPinned(d.receipts[0]); }).catch(() => {});
+    // prefer the newest receipt that can still do something (open → claim), else the newest of any kind
+    fetch(`/api/receipts?user=${me.user}`).then((r) => (r.ok ? r.json() : null)).then((d) => {
+      const list: Receipt[] = d?.receipts || []; if (!list.length || pinned) return;
+      setPinned(list.find((x) => x.status === "ACTIVE" || x.status === "FULFILLED") || list.find((x) => x.status !== "BLOCKED") || list[0]);
+    }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me.user]);
 
@@ -58,7 +62,7 @@ export default function Home() {
 
       {/* the loop */}
       <section className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,1fr)]" aria-label="Demo">
-        <Chat onChain={onChain} bond={skyjet?.bond} onReceipt={(r) => { setPinned((cur) => (r.status === "BLOCKED" && cur && cur.status === "ACTIVE" ? cur : r)); refresh(); }} />
+        <Chat onChain={onChain} bond={skyjet?.bond} envelope={skyjet?.envelope} onReceipt={(r) => { setPinned((cur) => (r.status === "BLOCKED" && cur && cur.status === "ACTIVE" ? cur : r)); refresh(); }} />
 
         <div id="receipt-rail" aria-label="Your receipt" className="min-w-0 scroll-mt-20 space-y-4 lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-88px)] lg:self-start lg:overflow-y-auto lg:pr-1 pane">
           <AnimatePresence mode="wait" initial={false}>

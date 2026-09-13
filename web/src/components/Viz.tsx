@@ -4,10 +4,11 @@
  * and then breathes. No stock illustrations: each visual is Kept's own object
  * (envelope, check, receipt, bond, validators) drawn in the type of the site.
  * Motion: draw-on with stroke-dashoffset, ease-out, ≤ 900 ms; ambient loops are slow (6–12 s).
- * All honor prefers-reduced-motion via the global rule.
+ * prefers-reduced-motion: CSS/motion transitions are clamped by the global rule; the two JS-driven
+ * animations (HeroFlow's phase loop, Count's count-up) check useReducedMotion() and hold still.
  */
 import { useEffect, useId, useRef, useState } from "react";
-import { motion, useInView } from "motion/react";
+import { motion, useInView, useReducedMotion } from "motion/react";
 
 const EASE = [0.23, 1, 0.32, 1] as const;
 
@@ -32,13 +33,15 @@ export function HeroFlow({ className = "", bond, paid, receiptId }: { className?
   const total = (bond ?? 74185) + (paid ?? 815); const paidFrac = total ? Math.min(0.35, Math.max(0.06, (paid ?? 815) / total)) : 0.1; const greenW = Math.round(440 * (1 - paidFrac)), redW = 440 - greenW;
   const ref = useRef<SVGSVGElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
+  const reduce = useReducedMotion();
   const [phase, setPhase] = useState(0); // 0 idle, 1 promise, 2 checking, 3 receipt
   useEffect(() => {
     if (!inView) return;
+    if (reduce) { setPhase(3); return; }           // reduced motion: show the finished state, no loop
     let i = 0; const t0 = setTimeout(() => setPhase(1), 1200);
     const t = setInterval(() => { i = (i + 1) % 4; setPhase(i); }, 1800);
     return () => { clearTimeout(t0); clearInterval(t); };
-  }, [inView]);
+  }, [inView, reduce]);
   const id = useId();
   return (
     <svg ref={ref} viewBox="0 0 520 300" className={className} role="img" aria-label="A promise from an agent is checked against the company's envelope by validators and becomes a receipt backed by a bond">
@@ -204,15 +207,18 @@ export function ValidatorsIdle({ className = "" }: { className?: string }) {
 export function Count({ to, prefix = "", className = "" }: { to: number; prefix?: string; className?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true });
+  const reduce = useReducedMotion();
   const [v, setV] = useState(0);
+  const from = useRef(0);                      // animate from the last shown value, never back from 0 on a refresh
   useEffect(() => {
     if (!inView) return;
-    const t0 = performance.now(), dur = 900;
+    if (reduce) { from.current = to; setV(to); return; }
+    const start = from.current, t0 = performance.now(), dur = 900;
     let raf = 0;
-    const tick = (t: number) => { const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3); setV(Math.round(to * e)); if (p < 1) raf = requestAnimationFrame(tick); };
+    const tick = (t: number) => { const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3); const val = Math.round(start + (to - start) * e); setV(val); from.current = val; if (p < 1) raf = requestAnimationFrame(tick); };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [inView, to]);
+  }, [inView, to, reduce]);
   return <span ref={ref} className={`mono tabular-nums ${className}`}>{prefix}{v.toLocaleString("en-US")}</span>;
 }
 

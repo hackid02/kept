@@ -61,6 +61,14 @@ export function bustReadCache() { cache.clear(); }
 const READ_TIMEOUT_MS = Number(process.env.KEPT_READ_TIMEOUT_MS || 12_000);
 export const isRateLimit = (e: unknown) => /rate limit/i.test(String((e as any)?.message || e));
 
+/** One shared back-off for the whole process: when Studio says 429, every caller waits for the same gate. */
+let rateGateUntil = 0;
+async function rateGate() {
+  const wait = rateGateUntil - Date.now();
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+}
+function tripRateGate(ms = 2500) { rateGateUntil = Math.max(rateGateUntil, Date.now() + ms); }
+
 /** Reject after `ms` — a stalled RPC must never hold a page hostage. */
 function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -74,25 +82,33 @@ async function read<T>(functionName: string, args: any[] = []): Promise<T> {
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.value as Promise<T>;
   const once = () => withTimeout(client().readContract({ address: ADDRESS, functionName, args }) as Promise<T>, READ_TIMEOUT_MS, functionName);
-  const value = (async () => {
-    try { return await once(); }
-    catch (e) {
-      // Studio allows ~30 req/min. A rate-limit is not an outage: wait a beat and retry once.
-      if (isRateLimit(e)) { await new Promise((r) => setTimeout(r, 2500)); return await once(); }
+  const entry = { at: Date.now(), value: undefined as unknown as Promise<T> };
+  entry.value = (async () => {
+    try {
+      await rateGate();
+      return await once();
+    } catch (e) {
+      // Studio allows ~30 req/min. A rate-limit is not an outage: back off (shared gate) and retry once.
+      if (isRateLimit(e)) { tripRateGate(); await rateGate(); return await once(); }
       throw e;
+    } finally {
+      entry.at = Date.now();   // TTL counts from when the answer arrived, not from dispatch
     }
   })();
-  cache.set(key, { at: Date.now(), value });
-  value.catch(() => cache.delete(key));
-  return value;
+  cache.set(key, entry);
+  entry.value.catch(() => cache.delete(key));
+  return entry.value;
 }
 
 async function write(privateKey: string, functionName: string, args: any[], value?: bigint): Promise<{ hash: string; receipt: any }> {
   const c = client(privateKey);
   const params: any = { address: ADDRESS, functionName, args };
   if (value !== undefined) params.value = value;
+  await rateGate();
   const hash = await c.writeContract(params);
-  const receipt = await c.waitForTransactionReceipt({ hash, status: "ACCEPTED" as any, retries: 60, interval: 4000 } as any);
+  // 25 × 4 s = 100 s, inside the API routes' maxDuration (120 s) so a slow consensus round surfaces as an
+  // error we control, never as a platform 504 with an HTML body.
+  const receipt = await c.waitForTransactionReceipt({ hash, status: "ACCEPTED" as any, retries: 25, interval: 4000 } as any);
   bustReadCache();
   return { hash: String(hash), receipt };
 }
@@ -105,6 +121,7 @@ function toCompany(c: any): Company {
   return {
     ...c, bond: Number(c.bond), committed: Number(c.committed), blocked: Number(c.blocked),
     fulfilled: Number(c.fulfilled), upheld: Number(c.upheld), dismissed: Number(c.dismissed), kept_rate: Number(c.kept_rate),
+    outstanding: Number(c.outstanding ?? 0), available: Number(c.available ?? c.bond),
   };
 }
 
@@ -115,11 +132,13 @@ export const chainApi = {
   },
   async commit(privateKey: string, user: string, promise: string, amount: number, due: string, transcript: string): Promise<{ id: string; hash: string }> {
     const { hash, receipt } = await write(privateKey, "commit", [addr(user), promise, amount, due, transcript]);
-    // result of the write is the receipt id; fall back to scanning the company's receipts
+    // The receipt id is the write's return value. If this SDK version hides it, fall back to the newest
+    // receipt for THIS user with THIS transcript — never "the company's newest", which under two concurrent
+    // chats would hand one visitor the other's receipt.
     let id: string | undefined = extractReturn(receipt);
     if (!id) {
-      const list = await this.receiptsForCompany(addressOf(privateKey));
-      id = list[0]?.id;
+      const mine = await this.receiptsForUser(user);
+      id = mine.find((r) => r.transcript === transcript && r.promise === promise)?.id;
     }
     if (!id) throw new Error("commit succeeded but receipt id not found");
     return { id, hash };
@@ -140,6 +159,14 @@ export const chainApi = {
   stats: () => read<any>("stats").then((s) => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, Number(v)])) as unknown as Stats),
 };
 
+/**
+ * True when the chain answered with a contract-level rejection (a real answer), not a transport failure.
+ * Studio's RPC reports a view that raised UserError as a bare "execution failed" (the message is dropped),
+ * so that string counts as an answer too: the node ran our code and our code said no.
+ */
+export const isUserError = (e: unknown) => /unknown receipt|unknown company|only the|not yet due|cannot claim|bond insufficient|not registered|not ACTIVE|envelope too short|name too short|calendar date|promises to itself|empty promise|execution failed/i.test(String((e as any)?.message || e));
+export const isExecutionFailed = (e: unknown) => /execution failed/i.test(String((e as any)?.message || e));
+
 /** Validator votes from a transaction receipt: e.g. ["agree","agree","agree"] (idle validators omitted). */
 export function votesOf(receipt: any): string[] {
   const v = receipt?.consensus_data?.votes || {};
@@ -156,7 +183,7 @@ function extractReturn(receipt: any): string | undefined {
     if (typeof c === "string" && c.startsWith("KPT-")) return c;
     if (c && typeof c === "object") {
       const s = JSON.stringify(c);
-      const m = s.match(/KPT-\d{4}-[0-9A-F]{4}/);
+      const m = s.match(/KPT-\d{4,}-[0-9A-F]{4}/);
       if (m) return m[0];
     }
   }

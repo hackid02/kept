@@ -14,6 +14,8 @@ const edge: Record<Receipt["status"], string> = {
 
 export function ReceiptCard({ r, compact = false, mine = false, href, heading = "h2" }: { r: Receipt; compact?: boolean; mine?: boolean; href?: string; heading?: "h1" | "h2" | "p" }) {
   const H = heading;
+  // the demo opens the claim window at once (due = day of creation) while the agent quoted a longer timeframe — say so on the receipt itself
+  const demoDue = !!r.created_at && r.due === r.created_at.slice(0, 10) && /\b(\d+\s*(business\s*)?days?|weeks?)\b/i.test(r.promise + " " + r.transcript);
   const body = (
     <article className={`surface border-l-2 ${edge[r.status]} ${compact ? "p-4" : "p-5"}`} aria-label={`Receipt ${r.id}`}>
       <header className="mb-3 flex items-center justify-between gap-3">
@@ -31,7 +33,7 @@ export function ReceiptCard({ r, compact = false, mine = false, href, heading = 
 
       <dl className={`mt-4 grid gap-x-6 gap-y-2 ${compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-4"}`}>
         <Row k="Value" v={r.amount > 0 ? money(r.amount) : "—"} />
-        <Row k="Due" v={r.due} />
+        <Row k="Due" v={r.due} title={demoDue ? "Demo setting: the on-chain due date is the day of the promise so a claim can be filed at once. The agent's quoted timeframe is in the transcript; real deployments use it." : undefined} />
         <Row k="From" v={r.company_name} mono={false} />
         <Row k="To" v={short(r.user)} />
       </dl>
@@ -46,10 +48,10 @@ export function ReceiptCard({ r, compact = false, mine = false, href, heading = 
   return href ? <Link href={href} className="block rounded-[14px] transition-transform duration-150 ease-out hover:-translate-y-px">{body}</Link> : body;
 }
 
-function Row({ k, v, mono = true }: { k: string; v: string; mono?: boolean }) {
+function Row({ k, v, mono = true, title }: { k: string; v: string; mono?: boolean; title?: string }) {
   return (
-    <div className="min-w-0">
-      <dt className="label">{k}</dt>
+    <div className="min-w-0" title={title}>
+      <dt className="label">{k}{title && <span className="ml-1 cursor-help text-ink-3" aria-label={title}>ⓘ</span>}</dt>
       <dd className={`mt-0.5 truncate text-[13px] text-ink ${mono ? "mono" : ""}`}>{v}</dd>
     </div>
   );

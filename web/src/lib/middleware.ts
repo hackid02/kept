@@ -31,6 +31,8 @@ export interface WrapOptions {
   blockedReply?: string;
   /** Override the due date the detector extracted (used by the demo to open claims at once). */
   due?: (detected: string) => string;
+  /** If Kept itself is unreachable: hold the promising reply back (true) or deliver it unbacked (false, default). */
+  failClosed?: boolean;
 }
 
 export interface Wrapped {
@@ -44,7 +46,18 @@ export interface Wrapped {
   draft?: string;
   /** What the detector extracted, for logging. */
   detected?: { promise: string; amount: number; due: string } | null;
+  /**
+   * Set when the reply carried a promise but Kept could not record it (chain unreachable, rate limit).
+   * The reply is still delivered — a company must never lose a valid answer to its own guardrail — but
+   * it goes out WITHOUT a receipt, and the UI says so. `held` is true when the draft was held back
+   * instead, which is the strict mode a real deployment would choose (opts.failClosed).
+   */
+  receiptError?: string;
+  held?: boolean;
 }
+
+export const DEFAULT_HELD_REPLY =
+  "I want to confirm this properly and our commitment system is briefly unavailable — give me a moment and ask again, and I'll put it in writing.";
 
 export const DEFAULT_BLOCKED_REPLY =
   "I'm not able to offer that. What I can do is help with refunds, fee waivers and rebooking — tell me what happened with your trip and I'll sort it out.";
@@ -61,7 +74,14 @@ export function wrap(agent: Agent) {
       .join("\n");
     const due = opts.due ? opts.due(detected.due) : immediateClaims() ? new Date().toISOString().slice(0, 10) : detected.due;
 
-    const receipt = await kept.commit(opts.user, detected.promise, detected.amount, due, transcript);
+    let receipt: Receipt;
+    try {
+      receipt = await kept.commit(opts.user, detected.promise, detected.amount, due, transcript);
+    } catch (e) {
+      const receiptError = String((e as any)?.message || e);
+      if (opts.failClosed) return { reply: opts.blockedReply ?? DEFAULT_HELD_REPLY, detected, receiptError, held: true, draft };
+      return { reply: draft, detected, receiptError };
+    }
 
     if (receipt.status === "BLOCKED") {
       return { reply: opts.blockedReply ?? DEFAULT_BLOCKED_REPLY, receipt, blocked: true, draft, detected };

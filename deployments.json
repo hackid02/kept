@@ -1,9 +1,10 @@
 {
   "studionet": {
-    "address": "0x9a4CF8C07321e3ba85e5b60835203C97C1632F57",
+    "address": "0x943ADa0408979473fFf9e85C8a1e6cd33f4b97F4",
     "deployer": "0x8FD2A55265D1CeC7F869150035bF722aA5c62B94",
-    "txHash": "0xc6fb336b0c2ba9efe7de2e7440d041c35deb3cc6e62716c1ab1cdc801a675621",
-    "at": "2026-09-11T22:44:42.708Z",
-    "explorer": "https://genlayer-explorer.vercel.app"
+    "txHash": "0x9c4da10b26adf601bcebbd55ac4545cb2a7d3794d2e4bc9de52463706cf3de6d",
+    "at": "2026-09-13T11:36:56.670Z",
+    "explorer": "https://genlayer-explorer.vercel.app",
+    "previous": "0x9a4CF8C07321e3ba85e5b60835203C97C1632F57  (v1, 2026-09-11; replaced after code review)"
   }
 }

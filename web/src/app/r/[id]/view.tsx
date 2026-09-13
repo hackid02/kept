@@ -9,14 +9,34 @@ import type { Receipt } from "@/lib/types";
 export default function ReceiptView({ params }: { params: { id: string } }) {
   const [r, setR] = useState<Receipt | null>(null);
   const [missing, setMissing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [me, setMe] = useState<{ user?: string; backend?: string }>({});
+  const load = () => {
+    setError(null);
+    fetch(`/api/receipt/${params.id}`)
+      .then(async (x) => {
+        if (x.status === 404) return setMissing(true);
+        const body = await x.json().catch(() => null);
+        if (!x.ok || !body?.receipt) throw new Error(body?.error || `GenLayer Studio isn't answering right now (${x.status}).`);
+        setR(body.receipt);
+      })
+      .catch((e) => setError(String(e?.message || e)));
+  };
   useEffect(() => {
     fetch("/api/backend").then((x) => x.json()).then(setMe).catch(() => {});
-    fetch(`/api/receipt/${params.id}`).then(async (x) => { if (x.status === 404) return setMissing(true); setR((await x.json()).receipt); });
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
   if (missing) return <Empty id={params.id} />;
-  if (!r) return <p className="text-[13px] text-ink-3">Loading…</p>;
+  if (error && !r) return (
+    <div className="surface mx-auto max-w-md p-6 text-center" role="alert">
+      <p className="serif italic text-[22px] text-ink">Couldn't load this receipt.</p>
+      <p className="mt-2 text-[13px] leading-relaxed text-ink-2">{error} The receipt itself is on chain — nothing is lost.</p>
+      <button className="btn btn-primary mt-4" onClick={load}>Try again</button>
+    </div>
+  );
+  if (!r) return <p className="text-[13px] text-ink-3" aria-live="polite">Loading…</p>;
   const mine = !!me.user && me.user.toLowerCase() === r.user.toLowerCase();
   const onChain = me.backend === "chain";
 

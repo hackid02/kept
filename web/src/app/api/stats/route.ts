@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { kept } from "@/lib/kept";
+import { kept, staleAsOf } from "@/lib/kept";
+import { fail } from "@/lib/http";
 export const dynamic = "force-dynamic";
 export async function GET() {
-  try { return NextResponse.json(await kept.stats()); }
-  catch (e) {
-    const rate = /rate limit/i.test(String((e as any)?.message || e));
-    return NextResponse.json({ error: rate ? "rate limited" : "unavailable" }, { status: rate ? 429 : 503 });
-  }
+  try {
+    const s = await kept.stats();
+    const asOf = staleAsOf.get(s);
+    return NextResponse.json({ ...s, ...(asOf ? { stale: true, asOf } : {}) });
+  } catch (e) { return fail(e); }
 }
