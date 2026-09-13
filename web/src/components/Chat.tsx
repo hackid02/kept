@@ -57,7 +57,7 @@ export default function Chat({ onReceipt, onChain, bond }: { onReceipt?: (r: Rec
     <section className="surface flex h-[calc(100dvh-300px)] min-h-[420px] max-h-[640px] flex-col overflow-hidden lg:h-[640px] lg:max-h-none" aria-label="SkyJet support chat">
       <header className="flex h-12 shrink-0 items-center justify-between border-b border-hairline px-4">
         <div className="flex items-center gap-3">
-          <span className="grid h-6 w-6 place-items-center rounded-md bg-surface-3 text-[10px] font-medium tracking-wide text-ink-2">SJ</span>
+          <span className="grid h-6 w-6 place-items-center rounded-md border border-hairline bg-surface-3 text-[10px] font-medium tracking-wide text-ink-2">SJ</span>
           <div className="leading-none">
             <p className="text-[13px] font-medium text-ink">SkyJet Support</p>
             <p className="mt-1 text-[11px] text-ink-3">AI agent · replies are binding</p>
@@ -149,7 +149,7 @@ function Bubble({ m }: { m: ChatMessage }) {
   const user = m.role === "user";
   return (
     <div className={`flex ${user ? "justify-end" : "justify-start"}`}>
-      <p className={`max-w-[76%] rounded-2xl px-3.5 py-2 text-[14.5px] leading-[1.5] ${user ? "rounded-br-md bg-user text-white" : "rounded-bl-md bg-surface-3 text-ink"}`}>{m.content}</p>
+      <p className={`max-w-[76%] rounded-2xl px-3.5 py-2 text-[14.5px] leading-[1.5] ${user ? "rounded-br-md bg-user text-white" : "rounded-bl-md border border-hairline bg-surface-3 text-ink"}`}>{m.content}</p>
     </div>
   );
 }
@@ -158,7 +158,7 @@ function Blocked({ r, draft }: { r: Receipt; draft: string }) {
   return (
     <Rise>
       <div className="max-w-[560px] space-y-2">
-        <p className="strike inline-block max-w-full rounded-2xl rounded-bl-md bg-surface-2 px-3.5 py-2 text-[14.5px] leading-[1.5] text-ink-3">{draft}</p>
+        <p className="strike inline-block max-w-full rounded-2xl rounded-bl-md border border-hairline bg-surface-2 px-3.5 py-2 text-[14.5px] leading-[1.5] text-ink-3">{draft}</p>
         <div className="surface-2 border-l-2 border-l-rose px-3.5 py-3">
           <p className="flex items-center gap-2 text-[13px] font-medium text-rose">Blocked <span className="font-normal text-ink-3">· outside SkyJet's authority</span></p>
           <p className="mt-1 text-[13px] leading-relaxed text-ink-2">{r.check_reason}</p>

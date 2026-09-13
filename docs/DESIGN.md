@@ -47,7 +47,7 @@ Weight ceiling is 500. `text-wrap: balance` on headings, `pretty` on body. `font
 4px base. Ladder: 4 · 8 · 12 · 16 · 24 · 32 · 48 · 72 · 96.
 Section gap 72. Card padding 24. Element gap 8/12.
 Radii: **4** (badges) · **8** (buttons, inputs) · **14** (cards) · **9999** (pills). Concentric: outer = inner + padding.
-Borders do structure; shadows do nothing (except a soft 0 1px 0 white/4% inner highlight on raised surfaces).
+Borders do structure; shadows do nothing in dark (a 0 1px 0 white/4% inner highlight on raised surfaces). In light, three tonal steps carry the hierarchy — paper `#ECECE7` → card white → inset grey — and cards get one quiet shadow. Lesson learned: white cards on off-white paper with a 9% border read as "everything is just white".
 Max width 1120.
 
 ### Motion
@@ -92,10 +92,10 @@ Two themes, one set of hues. Dark is the default ("the notary's desk at night");
 
 | token | dark | light | note |
 |---|---|---|---|
-| canvas | `#0A0A0B` | `#F6F6F3` | page |
-| surface / 2 / 3 | `#111113` `#17171A` `#1F1F23` | `#FFFFFF` `#F7F7F5` `#EEEEEB` | cards → inputs → raised |
-| hairline / strong | white 8% / 14% | black 9% / 18% | borders, never shadows |
-| ink / 2 / 3 | `#F2F2F0` `#A3A3A0` `#7D7D79` | `#161615` `#5A5A57` `#6F6F6B` | ink-3 ≥ 4.5:1 on surface in both |
+| canvas | `#0A0A0B` | `#ECECE7` (+ a faint top light, radial to `#FAFAF7`) | page — light paper must be visibly darker than cards |
+| surface / 2 / 3 | `#111113` `#17171A` `#1F1F23` | `#FFFFFF` `#F6F6F3` `#EAEAE5` | cards → inputs → raised |
+| hairline / strong | white 8% / 14% | black 15% / 26% | borders do structure. Light adds one soft shadow on cards (`0 1px 2px 6%, 0 6px 16px -8px 10%`) because a border alone disappears on white |
+| ink / 2 / 3 | `#F2F2F0` `#A3A3A0` `#7D7D79` | `#161615` `#5A5A57` `#6C6C68` | ink-3 ≥ 4.5:1 on surface in both |
 | accent | `#7FD8BE` (ink `#06231B`) | `#146E51` (ink white) | 11.2:1 / 5.7:1 |
 | amber · rose | `#D9A441` · `#D96C6C` | `#8A5F0A` · `#B83A3A` | ≥ 5.2:1 on light |
 | user (chat) | `#2F6BFF` | `#2458E6` | only blue on the page |

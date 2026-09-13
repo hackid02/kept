@@ -22,15 +22,19 @@
 }
 [data-theme="light"] {
   color-scheme: light;
-  --canvas: 246 246 243; --surface: 255 255 255; --surface-2: 247 247 245; --surface-3: 238 238 235;
-  --surface-hover: 230 230 226; --input-focus: 255 255 255;
-  --hairline: rgba(20,20,18,.09); --hairline-strong: rgba(20,20,18,.18);
-  --ink: 22 22 21; --ink-2: 90 90 87; --ink-3: 111 111 107;
+  /* Three clear tonal steps: paper (canvas) → card (white) → inset (grey). Borders alone vanish on white,
+     so light mode also gets a whisper of shadow — the Linear/Stripe/Mercury recipe, nothing heavier. */
+  --canvas: 236 236 231; --surface: 255 255 255; --surface-2: 246 246 243; --surface-3: 234 234 229;
+  --surface-hover: 224 224 219; --input-focus: 255 255 255;
+  --hairline: rgba(20,20,18,.15); --hairline-strong: rgba(20,20,18,.26);
+  --ink: 22 22 21; --ink-2: 90 90 87; --ink-3: 108 108 104;
   --accent: 20 110 81; --accent-hover: 15 92 67; --accent-ink: 255 255 255;
   --amber: 138 95 10; --rose: 184 58 58; --user: 36 88 230; --user-hover: 28 76 208;
   --wash: 0 0 0;
-  --surface-shadow: 0 1px 2px rgba(20,20,18,.04);
+  --surface-shadow: 0 1px 2px rgba(20,20,18,.06), 0 6px 16px -8px rgba(20,20,18,.10);
 }
+/* light: paper has a little light falling on it from the top — depth without texture */
+[data-theme="light"] body { background: radial-gradient(120% 60% at 50% -10%, rgb(250 250 247) 0%, rgb(var(--canvas)) 60%) fixed; }
 
 html { background: rgb(var(--canvas)); }
 body { background: rgb(var(--canvas)); color: rgb(var(--ink)); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
@@ -85,6 +89,11 @@ button, [role=button] { -webkit-tap-highlight-color: transparent; }
 
 .row-link { display: block; border-radius: 10px; transition: background-color 160ms ease; }
 .row-link:hover { background: rgb(var(--wash) / .03); }
+[data-theme="light"] .row-link:hover { background: rgb(var(--wash) / .035); }
+/* light: primary/user buttons get a hairline of their own colour so edges stay crisp on white */
+[data-theme="light"] .btn-primary { box-shadow: inset 0 0 0 1px rgb(0 0 0 / .06), 0 1px 1px rgb(20 20 18 / .06); }
+[data-theme="light"] .btn-secondary { box-shadow: 0 1px 1px rgb(20 20 18 / .04); }
+[data-theme="light"] .btn-user { box-shadow: inset 0 0 0 1px rgb(0 0 0 / .08), 0 1px 1px rgb(20 20 18 / .08); }
 
 .hairline-y > * + * { border-top: 1px solid var(--hairline); }
 
