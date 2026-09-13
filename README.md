@@ -37,7 +37,7 @@ The missing piece isn't a better model. It's a way for an agent's word to be **c
 5. **UPHELD pays from the bond automatically** and lowers the company's public **Kept-rate** — the only reputation number a marketing team cannot touch.
 
 <p align="center"><img src="docs/shots/blocked.png" width="820" alt="SkyJet demo: a receipt pinned on the right, then a blocked jailbreak struck through in the chat" /></p>
-<p align="center"><img src="docs/shots/receipt_upheld.png" width="820" alt="A receipt after a claim: Upheld, $45 paid from SkyJet's bond, validators' reasoning" /></p>
+<p align="center"><img src="docs/shots/receipt_upheld.png" width="820" alt="A receipt after a claim: Upheld 3–0, $340 paid from SkyJet's bond, validators' reasoning" /></p>
 
 ## Try it in 60 seconds
 
