@@ -1,0 +1,13 @@
+{
+  "name": "kept-deploy-next",
+  "private": true,
+  "type": "module",
+  "description": "Deploy + smoke-test Kept on GenLayer Studio Next (chain 61997, GenVM v0.3, fee-aware consensus)",
+  "scripts": {
+    "deploy": "node deploy.mjs",
+    "smoke": "node smoke.mjs"
+  },
+  "dependencies": {
+    "genlayer-js": "^2.0.0-rc.1"
+  }
+}

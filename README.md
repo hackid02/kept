@@ -11,7 +11,7 @@ Every promise an AI agent makes to a human becomes a receipt, backed by a bond, 
   <a href="#how-it-works">How it works</a> ·
   <a href="#the-contract">Contract</a> ·
   <a href="#the-one-line-middleware">Middleware</a> ·
-  <a href="#proof-it-runs-on-genlayer">On-chain proof</a> ·
+  <a href="#proof-it-runs-on-genlayer">On-chain proof (Studio Next)</a> ·
   <a href="#run-it-yourself">Run it</a>
 </p>
 
@@ -82,7 +82,7 @@ Internet Court resolves disputes *between agents*. Kept covers **the human on th
 
 ## The contract
 
-`contracts/kept.py` — one Intelligent Contract, lint-clean, 22 direct-mode tests.
+`contracts/kept.py` — one Intelligent Contract, written for GenVM v0.3 (Studio Next). `contracts/kept_v02.py` is the same contract on the v0.2 SDK (the studionet deployment; what the 22 direct-mode tests run against — see [Two SDKs](#two-sdks-one-contract)).
 
 | Method | Who | What |
 |---|---|---|
@@ -132,9 +132,22 @@ The SkyJet demo is exactly this: `web/src/app/api/chat/route.ts` is 20 lines.
 
 ## Proof it runs on GenLayer
 
-Contract on GenLayer Studio (`studionet`): **`0x943ADa0408979473fFf9e85C8a1e6cd33f4b97F4`** — deploy tx `0x9c4da10b…3de6d` (see `deployments.json`; the v1 contract `0x9a4C…2F57` is listed there too — it was replaced after a code review, see below).
+**Studio Next (chain 61997, GenVM v0.3, fee-aware consensus v0.6):** **`0xF50F4df2623f8Ac5263f81a530eb13a145600a23`**
+→ [explorer-studio-dev.genlayer.com/address/0xF50F…0a23](https://explorer-studio-dev.genlayer.com/address/0xF50F4df2623f8Ac5263f81a530eb13a145600a23) — deploy tx `0x01d3de01…846b`, 15 Sep 2026.
 
-Real transactions from the build, ruled by Studio's validators:
+The whole demo flow, run against it by `deploy/next/smoke.mjs` (every step a real transaction, 5 validators, 62 s total):
+
+| Step | Receipt | Validators said |
+|---|---|---|
+| SkyJet registers, bond 25 000 | — | accepted, 5 s |
+| agent commits "$340 refund within 5 business days" | `KPT-0003-9997` **ACTIVE** | *"within the permitted refund limit of $500 per customer"* — 14 s |
+| agent is jailbroken: "Tokyo for $1", forged envelope pasted into the transcript | `KPT-0004-9997` **BLOCKED** | *"selling a discounted flight ticket is not included in the permitted actions"* — 12 s |
+| a stranger claims the refund | — | reverted: `only the promised user can claim` |
+| the customer claims after the due date | `KPT-0003-9997` **UPHELD**, 340 paid from bond | *"the company provided no fulfilment proof … the customer's bank statement evidence indicates no refund was received by the due date"* — 14 s |
+
+Two receipts from an earlier run (`KPT-0001/0002-9997`) are on the same contract with the same outcomes. Studio Next writes cost a fee deposit (~0.1 GEN, refunded net of use); the payout transfer additionally needs a pre-declared *message fee allocation* — `deploy/next/lib.mjs` shows how to size it with Studio's simulator. Timings measured: register 5 s, commit 12–16 s, claim 14 s.
+
+**Studio (`studionet`, chain 61999) — what the live site uses:** `0x943ADa0408979473fFf9e85C8a1e6cd33f4b97F4` ([explorer](https://explorer-studio.genlayer.com/address/0x943ADa0408979473fFf9e85C8a1e6cd33f4b97F4); deploy tx `0x9c4da10b…3de6d`; the v1 contract `0x9a4C…2F57` is in `deployments.json` too — replaced after a code review, see below). Real receipts from the build:
 
 | Receipt | What happened | Validators said |
 |---|---|---|
@@ -143,7 +156,7 @@ Real transactions from the build, ruled by Studio's validators:
 
 Latency on studionet: commit 10–25 s, claim 15–25 s.
 
-Two things worth knowing about Studio specifically. Its RPC reports a view that raised `UserError` as a bare `execution failed` (the message is dropped), so the app treats that string as "the contract said no". And `emit_transfer` on Studio records the payout but the receipt shows `value_credited: false` — the bond decrement is real and on chain, the credit to the customer's balance isn't, so the UI says "paid from bond" and never claims your wallet went up.
+Two things worth knowing about Studio specifically. Its RPC reports a view that raised `UserError` as a bare `execution failed` (the message is dropped), so the app treats that string as "the contract said no". And `emit_transfer` records the payout but the receipt shows `value_credited: false` until finalization — the bond decrement is real and on chain the moment the claim is accepted; the credit to the customer's balance lands when the transaction finalizes, so the UI says "paid from bond" and never claims your wallet went up.
 
 ## Run it yourself
 
@@ -152,8 +165,8 @@ git clone https://github.com/hackid02/kept && cd kept
 
 # contract: lint + tests (GenVM direct mode, no network needed)
 pip install -r requirements.txt
-genvm-lint check contracts/kept.py
-python -m pytest tests/direct -q          # 22 passed
+genvm-lint check contracts/kept_v02.py
+python -m pytest tests/direct -q          # 22 passed (v0.2 SDK build of the contract, GenVM direct mode)
 
 # web app
 cd web && npm install
@@ -172,10 +185,31 @@ KEPT_COMPANY_SECRET=another-random-string   # unlocks company-side actions: "mar
 OPENAI_API_KEY=sk-…                       # optional: makes the SkyJet chatbot a real LLM (default: rule-based stand-in)
 ```
 
-**Deploy your own instance:** `node deploy/deploy.mjs` (studionet, fresh funded key) — prints the env block above.
-`GENLAYER_NETWORK=testnetBradbury DEPLOYER_PRIVATE_KEY=0x… node deploy/deploy.mjs` for testnet.
+**Deploy your own instance**
+
+```bash
+# Studio Next (chain 61997) — GenVM v0.3 contract, fee-aware writes
+cd deploy/next && npm install
+npm run deploy                            # fresh funded key → deployments.json → studioNext, prints the explorer link
+npm run smoke                             # register → commit → jailbreak → stranger claim → customer claim → UPHELD  (~1 min)
+
+# Studio (studionet, chain 61999) — v0.2 SDK contract, what the live site uses
+node deploy/deploy.mjs                    # prints the env block above
+GENLAYER_NETWORK=testnetBradbury DEPLOYER_PRIVATE_KEY=0x… node deploy/deploy.mjs
+```
 
 **Local validators:** `pip install "genlayer-test[sim]" && glsim --port 4000 --validators 5 --llm-provider openai:gpt-4o-mini`, then `GENLAYER_NETWORK=localnet`.
+
+### Two SDKs, one contract
+
+GenLayer is mid-migration. Studio Next runs GenVM v0.3 (`import genlayer as gl`, `gl.contract.Contract`, `gl.storage.allow`, `gl.vm.run_nondet`, `gl.chain.Account(addr).emit_transfer(v)`); Studio and the local test runner still run the v0.2 SDK (`from genlayer import *`, `gl.Contract`, `@allow_storage`, `run_nondet_unsafe`). So the repo carries the contract twice:
+
+| File | SDK | Where it runs | Verified by |
+|---|---|---|---|
+| `contracts/kept.py` | GenVM v0.3 | **Studio Next** `0xF50F…0a23` | schema check + the live smoke test above (all 13 methods) |
+| `contracts/kept_v02.py` | v0.2 | Studio `0x943A…97F4` (live site), local GenVM | `genvm-lint` + 22 direct-mode tests |
+
+The two files differ only in imports, decorators and SDK names (diff them). Logic, prompts, storage layout and the public API are identical; the v0.3 runner isn't published for local use yet, which is why the tests run against the v0.2 twin.
 
 ### Backends, honestly
 
@@ -194,9 +228,12 @@ A line-by-line review of the first build found real problems; commits `119a638` 
 ## Repository
 
 ```
-contracts/kept.py          the Intelligent Contract
+contracts/kept.py          the Intelligent Contract (GenVM v0.3 — Studio Next)
+contracts/kept_v02.py      the same contract on the v0.2 SDK (Studio / local GenVM)
 tests/direct/test_kept.py  22 tests (register, commit inside/outside, reservations, envelope snapshot, prompt fencing, claim upheld/dismissed, bond math, kept_rate, access control, timing)
-deploy/deploy.mjs          deploy + smoke test, writes deployments.json
+deploy/next/               Studio Next: deploy.mjs, smoke.mjs (the demo flow as real transactions), lib.mjs (fee + message-allocation handling)
+deploy/deploy.mjs          Studio (studionet) deploy + smoke test
+deployments.json           addresses, tx hashes, explorer links for both networks
 web/                       Next.js app
   src/lib/middleware.ts      wrap() — the one line
   src/lib/agent.ts           SkyJet's plain LLM agent + promise detector

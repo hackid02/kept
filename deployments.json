@@ -1,10 +1,22 @@
 {
+  "studioNext": {
+    "chainId": 61997,
+    "address": "0xF50F4df2623f8Ac5263f81a530eb13a145600a23",
+    "deployer": "0x677821b91b41Bb3ef3BC349dA68e94202Fc79997",
+    "txHash": "0x01d3de014f0f0d78d0b1f7fc6e86b792c5aacebbfca3e883c214cc6e736a846b",
+    "at": "2026-09-15T10:41:00Z",
+    "explorer": "https://explorer-studio-dev.genlayer.com/address/0xF50F4df2623f8Ac5263f81a530eb13a145600a23",
+    "rpc": "https://studio-next.genlayer.com/api",
+    "genvm": "v0.3.0-rc7 (contracts/kept.py)"
+  },
   "studionet": {
     "address": "0x943ADa0408979473fFf9e85C8a1e6cd33f4b97F4",
     "deployer": "0x8FD2A55265D1CeC7F869150035bF722aA5c62B94",
     "txHash": "0x9c4da10b26adf601bcebbd55ac4545cb2a7d3794d2e4bc9de52463706cf3de6d",
     "at": "2026-09-13T11:36:56.670Z",
-    "explorer": "https://genlayer-explorer.vercel.app",
-    "previous": "0x9a4CF8C07321e3ba85e5b60835203C97C1632F57  (v1, 2026-09-11; replaced after code review)"
+    "explorer": "https://explorer-studio.genlayer.com/address/0x943ADa0408979473fFf9e85C8a1e6cd33f4b97F4",
+    "previous": "0x9a4CF8C07321e3ba85e5b60835203C97C1632F57  (v1, 2026-09-11; replaced after code review)",
+    "chainId": 61999,
+    "genvm": "v0.2 SDK (contracts/kept_v02.py)"
   }
 }

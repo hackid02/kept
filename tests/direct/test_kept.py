@@ -5,7 +5,7 @@ suite is deterministic and runs in-memory, no GenLayer node required.
 import json
 import pytest
 
-CONTRACT = "contracts/kept.py"
+CONTRACT = "contracts/kept_v02.py"   # v0.2-SDK twin of contracts/kept.py: identical logic, runnable in gltest direct mode
 
 
 def A(raw):

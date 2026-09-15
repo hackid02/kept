@@ -1,4 +1,4 @@
-# { "Depends": "py-genlayer:5jycge4q8k23462jtb0b9fyey1s9qz928sz2nbrd9mg4sxqg2qng" }
+# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
 """
 Kept — every promise an AI agent makes to a human becomes enforceable.
 
@@ -14,7 +14,7 @@ Flow
                                  -> UPHELD (bond pays the user) or DISMISSED
 5. kept_rate(company)            public score: honored / (honored + upheld claims)
 
-All judgement calls go through gl.vm.run_nondet with a leader/validator pair.
+All judgement calls go through gl.vm.run_nondet_unsafe with a leader/validator pair.
 Validators independently re-run the same prompt and compare ONLY the decision fields
 (never the free-text reasoning), per GenLayer's equivalence-principle guidance.
 
@@ -30,15 +30,10 @@ Guarantees the contract enforces (not the UI):
 
 Out of scope for this build: withdrawing an unencumbered bond, and counting silently
 overdue promises (never claimed) as broken.
-
-Runtime: GenVM v0.3 (GenLayer Studio Next, chain 61997). The same contract written
-against the v0.2 SDK — deployed on the original Studio (chain 61999) — is kept as
-contracts/kept_v02.py; the logic and prompts are identical, only the SDK names differ.
 """
 
-import genlayer as gl
-from genlayer.types import *
-from genlayer.storage import TreeMap, DynArray
+from genlayer import *
+from dataclasses import dataclass
 import datetime
 
 
@@ -46,7 +41,8 @@ import datetime
 # storage
 # ---------------------------------------------------------------------------
 
-@gl.storage.allow
+@allow_storage
+@dataclass
 class Company:
     name: str
     envelope: str            # plain-English authority envelope
@@ -59,14 +55,9 @@ class Company:
     dismissed: u256          # claims validators dismissed
     registered_at: str
 
-    def __init__(self, name: str, envelope: str, bond: u256, outstanding: u256, committed: u256,
-                 blocked: u256, fulfilled: u256, upheld: u256, dismissed: u256, registered_at: str):
-        self.name = name; self.envelope = envelope; self.bond = bond; self.outstanding = outstanding
-        self.committed = committed; self.blocked = blocked; self.fulfilled = fulfilled
-        self.upheld = upheld; self.dismissed = dismissed; self.registered_at = registered_at
 
-
-@gl.storage.allow
+@allow_storage
+@dataclass
 class Receipt:
     id: str
     company: Address
@@ -85,27 +76,18 @@ class Receipt:
     created_at: str
     updated_at: str
 
-    def __init__(self, id: str, company: Address, user: Address, promise: str, amount: u256, due: str,
-                 transcript: str, envelope: str, status: str, check_reason: str, proof: str, evidence: str,
-                 verdict_reason: str, payout: u256, created_at: str, updated_at: str):
-        self.id = id; self.company = company; self.user = user; self.promise = promise; self.amount = amount
-        self.due = due; self.transcript = transcript; self.envelope = envelope; self.status = status
-        self.check_reason = check_reason; self.proof = proof; self.evidence = evidence
-        self.verdict_reason = verdict_reason; self.payout = payout; self.created_at = created_at
-        self.updated_at = updated_at
-
 
 # ---------------------------------------------------------------------------
 # events
 # ---------------------------------------------------------------------------
 
-class CompanyRegistered(gl.chain.Event):
+class CompanyRegistered(gl.Event):
     def __init__(self, company: Address, /, **blob): ...
 
-class PromiseCommitted(gl.chain.Event):
+class PromiseCommitted(gl.Event):
     def __init__(self, company: Address, user: Address, /, **blob): ...
 
-class ClaimResolved(gl.chain.Event):
+class ClaimResolved(gl.Event):
     def __init__(self, company: Address, user: Address, /, **blob): ...
 
 
@@ -154,7 +136,7 @@ def _rate(c: Company) -> int:
 # contract
 # ---------------------------------------------------------------------------
 
-class Kept(gl.contract.Contract):
+class Kept(gl.Contract):
     companies: TreeMap[Address, Company]
     receipts: TreeMap[str, Receipt]
     receipt_ids: DynArray[str]              # insertion order, for listing
@@ -276,7 +258,7 @@ Respond with JSON only:
             theirs = leader_result.calldata
             return bool(mine["inside"]) == bool(theirs.get("inside"))
 
-        result = gl.vm.run_nondet(leader, validator)
+        result = gl.vm.run_nondet_unsafe(leader, validator)
 
         rid = self._new_id()
         now = self._now()
@@ -391,7 +373,7 @@ Respond with JSON only:
             # compare the decision only, never the prose
             return mine["verdict"] == theirs.get("verdict")
 
-        result = gl.vm.run_nondet(leader, validator)
+        result = gl.vm.run_nondet_unsafe(leader, validator)
 
         r.evidence = evidence
         r.verdict_reason = result["reason"]
@@ -413,7 +395,7 @@ Respond with JSON only:
                     payout = u256(pay)
                     # value leaves this contract's balance for the user's address; the bond
                     # ledger is debited in the same transaction, so both revert together
-                    gl.chain.Account(r.user).emit_transfer(payout)
+                    gl.get_contract_at(r.user).emit_transfer(value=payout)
                     company.bond = u256(int(company.bond) - pay)
             r.payout = payout
         else:
