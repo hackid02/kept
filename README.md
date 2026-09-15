@@ -7,6 +7,7 @@ Every promise an AI agent makes to a human becomes a receipt, backed by a bond, 
 
 <p align="center">
   <a href="https://kept-receipts.vercel.app"><b>Live demo →</b></a> ·
+  <a href="https://youtu.be/emeVhY0oJYI">Video (81 s)</a> ·
   <a href="#try-it-in-60-seconds">Try it</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#the-contract">Contract</a> ·

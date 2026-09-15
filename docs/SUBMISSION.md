@@ -32,7 +32,7 @@ On Studio Next, with a live airline agent to try (and try to jailbreak). Not age
 (999 chars)
 
 ## 04 · Demo video
-YouTube URL — _to add after upload_
+`https://youtu.be/emeVhY0oJYI`  (unlisted · 81 s · uploaded 15 Sep 2026)
 
 Upload `kept_demo.mp4` (81 s, 1920×1080, real recordings of the live site on Studio, v2 contract — receipt KPT-0013-2B94 issued, jailbreak KPT-0014-2B94 blocked, claim ruled Upheld 3–0, all on chain). Suggested YouTube title: **Kept — enforceable promises from AI agents (GenLayer Agent Tank demo)**. Unlisted is fine.
 
@@ -64,6 +64,6 @@ Studio Next (61997) contract 0xF50F4df2623f8Ac5263f81a530eb13a145600a23. `npm ru
 ### Before you press submit
 - [ ] GitHub is pushed and matches production (`git log origin/main..main` empty)
 - [ ] Studio Next explorer link opens: https://explorer-studio-dev.genlayer.com/address/0xF50F4df2623f8Ac5263f81a530eb13a145600a23
-- [ ] Video uploaded to YouTube (unlisted is fine), URL pasted in 04
+- [x] Video uploaded to YouTube (unlisted): https://youtu.be/emeVhY0oJYI — paste in 04
 - [ ] Open the live site once in a private window: badge says GenLayer Studio, not Simulator
 - [ ] Wallet connected is the one used for the Phase-1 pitch
